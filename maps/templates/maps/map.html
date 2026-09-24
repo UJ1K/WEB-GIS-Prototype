@@ -1,0 +1,643 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#031018">
+  <title>DISASTER WEBGIS</title>
+  <link rel="preconnect" href="https://unpkg.com">
+  <link rel="preconnect" href="https://{s}.tile.openstreetmap.org">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+  <style>
+    :root { 
+      color-scheme: dark; 
+      --panel: #02111a; 
+      --panel-hover: #09314b;
+      --line: #1c323f; 
+      --cyan: #52ff9a; 
+      --cyan-dim: rgba(157, 228, 240, 0.2);
+      --text-main: #c4d4d9;
+      --text-muted: #6b8594;
+    }
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #000; color: var(--text-main); font: 12px/1.4 "Segoe UI", Roboto, Helvetica, sans-serif; }
+    button, select, input { font: inherit; }
+    button { color: inherit; cursor: pointer; }
+    
+    #map { position: absolute; inset: 0; bottom: 250px; background: #0a1114; transition: bottom 0.3s ease-in-out; }
+    
+    /* Top & Side Controls (Flat Dark Style) */
+    .top-left-widget { position: absolute; z-index: 800; top: 15px; left: 15px; background: rgba(5, 18, 25, 0.88); border: 1px solid var(--line); color: var(--text-main); padding: 6px 9px; display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 500; }
+    .top-left-widget:after { content: '⌄'; position: relative; top: -2px; margin-left: 10px; color: var(--text-muted); }
+    .top-left-widget select { width: 178px; color:var(--text-main); background:transparent; border:0; outline:0; appearance:none; cursor:pointer; }
+    .top-left-widget option {color:#10212b;background:#eff6f7;}
+    
+    .top-right-widget { position: absolute; z-index: 800; top: 15px; right: 15px; display: flex; background: rgba(5, 18, 25, 0.85); border: 1px solid var(--line); }
+    .top-right-widget button { background: transparent; border: none; border-right: 1px solid var(--line); color: var(--text-main); padding: 7px 12px; font-size: 11px; display: flex; align-items: center; gap: 6px; }
+    .top-right-widget button:last-child { border-right: none; }
+    .top-right-widget button:hover, .top-right-widget button.active { background: var(--panel-hover); color: white; }
+    
+    .side-tools { position: absolute; z-index: 700; left: 15px; top: 60px; display: flex; flex-direction: column; background: rgba(5, 18, 25, 0.85); border: 1px solid var(--line); width: 32px; }
+    .side-tools button { background: transparent; border: none; border-bottom: 1px solid var(--line); width: 30px; height: 30px; display: grid; place-items: center; color: var(--text-main); }
+    .side-tools button:last-child { border-bottom: none; }
+    .side-tools button:hover { background: var(--panel-hover); color: white; }
+    .side-tools button.active {color:var(--cyan);background:var(--panel-hover);}
+    
+    /* Map Caption */
+    .map-caption { position: absolute; z-index: 500; bottom: 150px; left: 15px; color: #fff; text-shadow: 0 1px 4px rgba(0,0,0,0.8); font-size: 11px; }
+    
+    /* Bottom Dashboard - Edge to Edge Flat */
+    .dash { position: absolute; z-index: 800; bottom: 0; left: 0; right: 0; height: 250px; background: var(--panel); display: grid; grid-template-columns: 1fr 1.4fr 1.2fr 1fr; border-top: 1px solid var(--line); transition: transform 0.3s ease-in-out; }
+    
+    .dash-section { padding: 15px 20px; border-right: 1px solid var(--line); display: flex; flex-direction: column; }
+    .dash-section:last-child { border-right: none; }
+    .section-title { color: var(--cyan); font-size: 15px; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 5px; }
+    
+    /* Section 1: Mode Switches */
+    .mode-container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 10px;}
+    .main-modes { display: flex; flex-direction: column; gap: 5px; width: 100%; max-width: 250px;}
+    .main-modes button { background: transparent; border: 1px solid var(--line); color: var(--text-muted); font-size: 11px; font-weight: 600; letter-spacing: 0.05em; transition: 0.2s; padding: 4px; }
+    .main-modes button.active { background: var(--cyan-dim); border-color: var(--cyan); color: var(--cyan); }
+    .sub-modes { display: flex; flex-direction: column; gap: 5px; flex: 1; }
+    .sub-modes button { flex: 1; background: transparent; border: 1px solid var(--line); color: var(--text-main); font-size: 10px; }
+    .sub-modes button:hover { border-color: var(--text-muted); }
+
+    /* Drag and Drop area */
+    #dropZone { width: 100%; max-width: 340px; border: 1px dashed #555; background: rgba(0,0,0,0.2); border-radius: 6px; padding: 12px; text-align: center; transition: all 0.2s ease; }
+    #dropZone p { margin: 0 0 10px 0; font-size: 11px; color: #aaa; }
+    #dropZone button { background: transparent; border: 1px solid #777; color: #ddd; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 11px; transition: background 0.2s; }
+    #selectedFiles,#uploadStatus {display:block;margin-top:7px;color:var(--text-muted);font-size:10px;overflow-wrap:anywhere}
+    .analysis-controls{width:100%;max-width:340px;display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px}
+    .correction-toggle{display:flex;align-items:center;gap:7px;color:var(--text-main);font-size:10px}
+    .correction-toggle input{accent-color:var(--cyan)}
+    #renderTiff{background:#063345;border:1px solid #167995;color:#b8f5ff;padding:8px 12px;border-radius:4px;font-weight:600}
+    #renderTiff:disabled{opacity:.45;cursor:not-allowed}
+    .raster-info{font-size:10px;color:var(--text-muted);line-height:1.55;overflow-wrap:anywhere}
+    .band-controls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin-top:7px}
+    .band-controls label{font-size:9px;color:var(--text-muted)}
+    .band-controls select{display:block;width:100%;margin-top:3px;padding:3px;background:#061922;border:1px solid var(--line);color:var(--text-main)}
+    .index-controls{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:8px}
+    .index-controls label{font-size:9px;color:var(--text-muted)}
+    .index-controls select,.index-controls input{width:100%;margin-top:3px;padding:4px;background:#061922;border:1px solid var(--line);color:var(--text-main)}
+    #calculateIndex{grid-column:1/-1;background:#063345;border:1px solid #167995;color:#b8f5ff;padding:6px;border-radius:4px}
+    #calculateIndex:disabled{opacity:.45;cursor:not-allowed}
+    #floating_layer_control{position:absolute;z-index:900;top:58px;right:15px;width:min(280px,calc(100vw - 30px));max-height:min(55vh,420px);overflow:auto;background:rgba(2,17,26,.96);border:1px solid var(--line);color:var(--text-main);box-shadow:0 8px 28px rgba(0,0,0,.35)}
+    .layer-panel-header{position:sticky;top:0;display:flex;align-items:center;gap:8px;padding:9px 11px;background:#061922;border-bottom:1px solid var(--line);color:var(--cyan);font-weight:700;cursor:move;user-select:none}
+    .layer-row{padding:9px 11px;border-bottom:1px solid var(--line)}
+    .layer-row:last-child{border-bottom:0}
+    .layer-row-title{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;margin-bottom:6px}
+    .layer-row-controls{display:grid;grid-template-columns:auto 1fr;align-items:center;gap:8px;font-size:10px;color:var(--text-muted)}
+    .layer-row-controls input[type=range]{width:100%;margin:3px 0;accent-color:var(--cyan)}
+    .layer-row-controls input[type=checkbox]{accent-color:var(--cyan)}
+    @media(max-width:700px){#floating_layer_control{top:52px;right:8px;width:min(250px,calc(100vw - 58px));max-height:38vh}}
+    
+    /* Section 2: Timeline */
+    .timeline-container { display: flex; flex-direction: column; justify-content: center; height: 100%; }
+    .timeline-header { display: flex; align-items: center; justify-content: space-between; font-size: 10px; color: var(--text-muted); margin-bottom: 15px; }
+    .timeline-controls { display: flex; align-items: center; gap: 15px; }
+    
+    /* Custom Range Slider */
+    input[type=range] { flex: 1; appearance: none; background: transparent; height: 2px; position: relative; margin-top: 10px; }
+    input[type=range]::-webkit-slider-runnable-track { height: 2px; background: var(--text-muted); }
+    input[type=range]::-webkit-slider-thumb { appearance: none; width: 14px; height: 14px; margin-top: -6px; border-radius: 50%; background: #fff; border: 2px solid var(--cyan); box-shadow: 0 0 0 4px var(--cyan-dim); cursor: pointer; }
+    .years-labels { display: flex; justify-content: space-between; margin-top: 8px; font-size: 9px; color: var(--text-muted); }
+    
+    /* Section 3: Visual Renderings Grid */
+    .visual-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; height: 100%; }
+    .v-card { display: flex; align-items: center; gap: 8px; background: transparent; border: 1px solid var(--line); color: var(--text-muted); padding: 4px; text-align: left; font-size: 10px; }
+    .v-card:hover { border-color: var(--text-muted); }
+    .v-card.active { border-color: var(--cyan); color: var(--cyan); background: var(--cyan-dim); }
+    .v-thumb { width: 35px; height: 24px; background: #333; }
+    .v-card:nth-child(1) .v-thumb { background: url('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/12/1940/3290') center/cover; }
+    .v-card:nth-child(2) .v-thumb { background: linear-gradient(45deg, #a83279, #d38312); }
+    .v-card:nth-child(3) .v-thumb { background: linear-gradient(45deg, #160a0a, #336699); }
+    .v-card:nth-child(4) .v-thumb { background: linear-gradient(45deg, #448844, #88cc88); }
+    .v-card:nth-child(5) .v-thumb { background: linear-gradient(45deg, #22aa22, #aaffaa); }
+    .v-card:nth-child(6) .v-thumb { background: linear-gradient(45deg, #333399, #6666cc); }
+    
+    /* Section 4: Chart */
+    .chart-container { height: 100%; display: flex; align-items: flex-end; gap: 10px; padding-bottom: 5px; }
+    .bar-group { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px; justify-content: flex-end; height: 100%; }
+    .bar { width: 100%; background: #333; position: relative; }
+    .bar-group span { font-size: 8px; transform: rotate(-45deg); margin-top: 5px; color: var(--text-main); }
+    
+    /* Colors based on image */
+    .bar-water { background: #1a5b9e; height: 40%; }
+    .bar-trees { background: #228b22; height: 35%; }
+    .bar-flooded { background: #8fbc8f; height: 15%; }
+    .bar-crops { background: #ffd700; height: 80%; }
+    .bar-built { background: #cd5c5c; height: 25%; }
+    .bar-bare { background: #a9a9a9; height: 10%; }
+    .mobile-dashboard-trigger,.mobile-menu {display:none;}
+    .dash.collapsed {height:28px;}.dash.collapsed .dash-section{display:none;}
+    @media(max-width:700px){
+      #map{bottom:0}.top-left-widget{top:9px;left:9px;right:58px;max-width:calc(100% - 76px)}.top-left-widget select{width:100%;min-width:0}.top-right-widget{display:none}.mobile-menu{display:grid;position:absolute;z-index:850;right:9px;top:9px;width:34px;height:34px;background:rgba(5,18,25,.9);border:1px solid var(--line);place-items:center}.top-right-widget.mobile-open{display:flex;position:absolute;top:49px;right:9px;flex-direction:column}.top-right-widget.mobile-open button{border-right:0;border-bottom:1px solid var(--line);text-align:left}.side-tools{top:54px;left:9px}.map-caption{bottom:44px;left:9px;font-size:9px}.dash{display:none}.mobile-dashboard-trigger{display:flex;position:absolute;z-index:820;bottom:10px;left:10px;right:10px;justify-content:space-between;align-items:center;padding:11px 13px;border:1px solid var(--line);background:rgba(2,17,26,.94);color:var(--text-main)}.dash.mobile-open{display:grid;left:6px;right:6px;bottom:6px;width:auto;height:auto;max-height:78vh;overflow:auto;grid-template-columns:1fr 1fr}.dash.mobile-open .dash-section{padding:12px;border-bottom:1px solid var(--line)}.dash.mobile-open .dash-section:nth-child(2),.dash.mobile-open .dash-section:nth-child(3){grid-column:1/-1}.dash.mobile-open .section-title{margin-bottom:8px}.dash.mobile-open .chart-container{height:90px}.dash.mobile-open .close-dash{display:block}.mobile-dashboard-trigger[hidden]{display:none}}
+
+  </style>
+</head>
+<body>
+  
+  <!-- Map Area -->
+  <div id="map"></div>
+  <section id="floating_layer_control" aria-label="Map layers">
+    <header class="layer-panel-header" id="layerPanelDragHandle"><span aria-hidden="true">▤</span><span>Layers</span></header>
+    <div class="layer-row">
+      <span class="layer-row-title" id="inputLayerLabel">Input: Waiting for file…</span>
+      <div class="layer-row-controls"><label><input id="inputLayerVisible" type="checkbox" checked disabled> Visible</label><label>Opacity <input id="inputLayerOpacity" type="range" min="0" max="100" value="100" disabled></label></div>
+    </div>
+    <div class="layer-row">
+      <span class="layer-row-title" id="resultLayerLabel">Result: Water Detection</span>
+      <div class="layer-row-controls"><label><input id="resultLayerVisible" type="checkbox" disabled> Visible</label><label>Opacity <input id="resultLayerOpacity" type="range" min="0" max="100" value="80" disabled></label></div>
+    </div>
+  </section>
+  
+  <!-- Top Left Branding -->
+  <div class="top-left-widget">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><circle cx="12" cy="12" r="1"/><path d="M12 2v20M2 12h20"/></svg>
+    <select id="regionSelect" aria-label="Pilih wilayah"><option value="semarang" selected>Semarang, Indonesia</option><option value="kalimantan">Kalimantan, Indonesia</option><option value="jakarta">Jakarta, Indonesia</option><option value="yogyakarta">Yogyakarta, Indonesia</option></select>
+  </div>
+  
+  <!-- Top Right Tools -->
+  <div class="top-right-widget">
+    <button class="active" id="btn-labels">☑ Map Labels</button>
+    <button id="btn-terrain" aria-pressed="false">☐ Terrain</button>
+  </div>
+  <button class="mobile-menu" id="mobileMenu" aria-label="Buka pengaturan peta">☰</button>
+  
+  <!-- Side Navigation -->
+  <div class="side-tools">
+    {% comment %} <button aria-label="Search">🔍</button> {% endcomment %}
+    <button id="zoomIn" aria-label="Zoom In">+</button>
+    <button id="zoomOut" aria-label="Zoom Out">-</button>
+    <button id="homeExtent" aria-label="Default Extent">🏠</button>
+    <button id="measureTool" aria-label="Measure distance" title="Klik peta untuk mengukur jarak">📏</button>
+  </div>
+
+  {% comment %} <div class="map-caption">Powered by Esri | Sentinel-2 10m Land Use/Land Cover data by Esri and Impact Observatory</div> {% endcomment %}
+  
+  <!-- Bottom Edge-to-Edge Dashboard -->
+  {% comment %} <button class="mobile-dashboard-trigger" id="showDashboard"><span>▤ &nbsp; Tampilkan Analisis</span><span>2017—2025 &nbsp;⌃</span></button> {% endcomment %}
+  
+  <div class="dash" id="dashboard">
+    <!-- Toggle Dashboard Button -->
+    <button id="toggleDashboardBtn" style="position: absolute; top: -25px; left: 20px; height: 25px; padding: 0 15px; background: var(--panel); border: 1px solid var(--line); border-bottom: none; border-radius: 8px 8px 0 0; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; z-index: 10;">
+        ▼
+    </button>
+    
+    <!-- Section 1: Mode -->
+    <div class="dash-section" style="grid-column: span 0;"> <!-- Merged columns for more space if needed -->
+      <button class="close-dash" id="closeDashboard" style="display:none;float:right">Tutup ✕</button>
+      <div class="mode-container">
+        <div class="section-title">INPUT FILE</div>
+   
+        
+        <!-- Drag and Drop Zone -->
+        <div id="dropZone" role="button" tabindex="0" aria-label="Choose satellite imagery or shapefile">
+            <p>Drop a GeoTIFF to render it locally<br>Supported: .tif and .tiff — file stays in your browser</p>
+            <input type="file" id="fileInput" accept=".tif,.tiff,image/tiff" style="display:none">
+            <button type="button" id="browseFiles">Choose GeoTIFF</button>
+            <span id="selectedFiles" aria-live="polite">No files selected</span>
+        </div>
+        <div class="analysis-controls">
+          <span class="correction-toggle">Local preview • no upload</span>
+          <button type="button" id="renderTiff" disabled>Render on Map</button>
+        </div>
+        <span id="uploadStatus" role="status" aria-live="polite"></span>
+
+      </div>
+    </div>
+
+
+    
+    <!-- Section 2: Timeline -->
+    {% comment %} <div class="dash-section">
+      <div class="section-title" style="text-align: center;">SENTINEL-2 IMAGERY <span id="current-year">2017</span></div>
+      <div class="timeline-container">
+        <div class="timeline-controls">
+          <span style="font-size: 10px; display:flex; align-items:center; gap: 5px;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg> Speed
+          </span>
+          <span style="font-size: 10px; color: var(--text-muted);">🔗 Copy Link &nbsp; ↓ Download MP4</span>
+        </div>
+        <div style="padding: 0 10px;">
+          <input type="range" id="yearSlider" min="2017" max="2025" value="2017">
+          <div class="years-labels">
+            <span>2017</span><span>2018</span><span>2019</span><span>2020</span><span>2021</span><span>2022</span><span>2023</span><span>2024</span><span>2025</span>
+          </div>
+        </div>
+      </div>
+    </div> {% endcomment %}
+
+
+    
+    <!-- Optional correction is controlled next to the upload action. -->
+    {% comment %} <div class="dash-section section-adaptif">
+      <div class="section-title">INPUT GUIDANCE</div>
+      <div style="font-size:10px;color:var(--text-muted);line-height:1.7">Select a TIFF, review its dimensions and bands, then choose display bands. RGB files commonly use bands 1/2/3; multispectral order varies by sensor. Single-band files render in grayscale.</div>
+    </div> {% endcomment %}
+    
+    <!-- Section 4: Totals Chart -->
+    {% comment %} <div class="dash-section">
+      <div class="section-title">Graph <span id="chart-year">2017</span> ⤢</div>
+      <div style="display:flex; justify-content:space-between; font-size:8px; color:var(--text-muted); margin-bottom:5px;">
+        <span>24%</span><span>14%</span><span>0.6%</span><span>37%</span><span>18%</span><span>5%</span>
+      </div>
+      <div class="chart-container">
+        <div class="bar-group"><div class="bar bar-water"></div><span>Water</span></div>
+        <div class="bar-group"><div class="bar bar-trees"></div><span>Trees</span></div>
+        <div class="bar-group"><div class="bar bar-flooded"></div><span>Flooded</span></div>
+        <div class="bar-group"><div class="bar bar-crops"></div><span>Crops</span></div>
+        <div class="bar-group"><div class="bar bar-built"></div><span>Built</span></div>
+        <div class="bar-group"><div class="bar bar-bare"></div><span>Bare</span></div>
+      </div>
+    </div> {% endcomment %}
+    <div class="dash-section section-adaptif">
+      <div class="section-title">LOCAL RASTER PREVIEW</div>
+      <div id="rasterInfo" class="raster-info">No TIFF loaded. File reading stays in browser memory.</div>
+      <div id="bandControls" class="band-controls" hidden>
+        <label>Red band<select id="redBand"></select></label>
+        <label>Green band<select id="greenBand"></select></label>
+        <label>Blue band<select id="blueBand"></select></label>
+      </div>
+    </div>
+    
+    <div class="dash-section section-adaptif">
+      <div class="section-title">SPECTRAL INDEX</div>
+      <div id="indexControls" class="index-controls">
+        <label>Index type<select id="indexType"><option value="NDVI">NDVI</option><option value="NDWI">NDWI</option><option value="NDBI">NDBI</option></select></label>
+        <label>Threshold<input id="indexThreshold" type="number" min="-1" max="1" step="0.05" value="0"></label>
+        <label>Band A<select id="indexBandA" disabled></select></label>
+        <label>Band B<select id="indexBandB" disabled></select></label>
+        <label style="grid-column:1/-1"><input id="waterMaskMode" type="checkbox"> Show only values above threshold as water</label>
+        <button id="calculateIndex" disabled>Calculate Index</button>
+      </div>
+      <span id="indexStatus" class="raster-info" aria-live="polite">Select a TIFF to enable index calculation.</span>
+      </div>
+    </div>
+
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="https://cdn.jsdelivr.net/npm/georaster@1.6.0/dist/georaster.browser.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/georaster-layer-for-leaflet@4.1.2/dist/georaster-layer-for-leaflet.min.js"></script>
+  <script>
+    // Inisialisasi Peta
+    const regions = {semarang:[-6.95711,110.43491],bangkok:[13.7563,100.5018],jakarta:[-6.2088,106.8456],chiangmai:[18.7883,98.9853],kalimantan:[-0.5,116.0],yogyakarta:[-7.782,110.360]};
+    let activeRegion='semarang';
+    const initialCenter = regions[activeRegion]; // Center di sekitar Semarang sesuai gambar
+    const map = L.map('map', { zoomControl: false, attributionControl: false }).setView(initialCenter, 11);
+    
+    // Layer Citra Satelit Utama
+    const satellite = L.tileLayer('https://server.arcgisonline.com/arcgis/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, attribution:'Tiles © Esri — Source: Esri, Maxar, Earthstar Geographics' }).addTo(map);
+
+
+    const labels = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map);
+
+// Navigasi Peta
+    document.getElementById('zoomIn').onclick = () => map.zoomIn();
+    document.getElementById('zoomOut').onclick = () => map.zoomOut();
+    document.getElementById('homeExtent').onclick = () => map.setView(regions[activeRegion], 11);
+
+    document.getElementById('btn-terrain').onclick = e => {
+      const active=e.currentTarget.getAttribute('aria-pressed')!=='true';
+      e.currentTarget.setAttribute('aria-pressed',String(active));
+      e.currentTarget.classList.toggle('active',active);
+      e.currentTarget.innerHTML=active?'☑ Terrain':'☐ Terrain';
+      document.getElementById('map').style.filter=active?'saturate(1.2) contrast(1.1)':'none';
+    };
+    document.getElementById('regionSelect').onchange=e=>{activeRegion=e.target.value;map.flyTo(regions[activeRegion],11);};
+    document.getElementById('measureTool').onclick=e=>{e.currentTarget.classList.toggle('active');map.getContainer().style.cursor=e.currentTarget.classList.contains('active')?'crosshair':'';measurePoints=[];if(measureLine){map.removeLayer(measureLine);measureLine=null;}};
+    let measurePoints=[],measureLine=null;
+    map.on('click',e=>{if(!document.getElementById('measureTool').classList.contains('active'))return;measurePoints.push(e.latlng);if(measureLine)map.removeLayer(measureLine);if(measurePoints.length>1){measureLine=L.polyline(measurePoints,{color:'#9de4f0',weight:3,dashArray:'5 5'}).addTo(map);const n=map.distance(measurePoints[measurePoints.length-2],measurePoints[measurePoints.length-1]);L.popup({closeButton:false}).setLatLng(e.latlng).setContent(n>1000?(n/1000).toFixed(2)+' km':Math.round(n)+' m').openOn(map);}});
+
+    // Toggle Labels
+    const btnLabels = document.getElementById('btn-labels');
+    btnLabels.onclick = () => {
+      if (map.hasLayer(labels)) {
+        map.removeLayer(labels);
+        btnLabels.innerHTML = '☐ Map Labels';
+        btnLabels.classList.remove('active');
+      } else {
+        labels.addTo(map);
+        btnLabels.innerHTML = '☑ Map Labels';
+        btnLabels.classList.add('active');
+      }
+    };
+
+    // Interaktivitas UI - Mode Utama
+    document.querySelectorAll('.main-modes button').forEach(btn => {
+      btn.onclick = () => {
+        document.querySelectorAll('.main-modes button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      };
+    });
+
+    // Update Tahun pada Slider (Currently commented out in HTML)
+    /* document.getElementById('yearSlider').oninput = (e) => {
+      const year = e.target.value;
+      document.getElementById('current-year').innerText = year;
+      document.getElementById('chart-year').innerText = year;
+    }; */
+    // document.getElementById('showDashboard').onclick=()=>{document.getElementById('dashboard').classList.add('mobile-open');document.getElementById('showDashboard').hidden=true;};
+    // document.getElementById('closeDashboard').onclick=()=>{document.getElementById('dashboard').classList.remove('mobile-open');document.getElementById('showDashboard').hidden=false;};
+    document.getElementById('mobileMenu').onclick=()=>document.querySelector('.top-right-widget').classList.toggle('mobile-open');
+
+    // --- NEW SCRIPTS ---
+    // 1. Dashboard Toggle (Slide down & Sinkronisasi Peta)
+    const dashboard = document.getElementById('dashboard');
+    const toggleBtn = document.getElementById('toggleDashboardBtn');
+    const mapContainer = document.getElementById('map');
+    let isHidden = false;
+
+    toggleBtn.addEventListener('click', () => {
+        isHidden = !isHidden;
+        if (isHidden) {
+            dashboard.style.transform = 'translateY(100%)';
+            mapContainer.style.bottom = '0'; // Peta memenuhi layar ke bawah
+            toggleBtn.innerHTML = '▲'; 
+        } else {
+            dashboard.style.transform = 'translateY(0)';
+            mapContainer.style.bottom = '250px'; // Sisakan ruang 140px untuk dashboard
+            toggleBtn.innerHTML = '▼'; 
+        }
+
+        // PENTING: Update ukuran kanvas Leaflet setelah animasi transisi selesai (300ms)
+        setTimeout(() => {
+            map.invalidateSize();
+        }, 300);
+    });
+
+    // GeoTIFF reading and rendering happen in browser memory; no upload request is made.
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const selectedFilesLabel = document.getElementById('selectedFiles');
+    const uploadStatus = document.getElementById('uploadStatus');
+    const renderButton = document.getElementById('renderTiff');
+    function setText(id, value) {
+      const element = document.getElementById(id);
+      if (element) element.textContent = value;
+    }
+    let selectedFile = null;
+    let rasterLayer = null;
+    let currentRaster = null;
+    let indexLayer = null;
+    const inputLayerVisible = document.getElementById('inputLayerVisible');
+    const inputLayerOpacity = document.getElementById('inputLayerOpacity');
+    const resultLayerVisible = document.getElementById('resultLayerVisible');
+    const resultLayerOpacity = document.getElementById('resultLayerOpacity');
+    inputLayerVisible.addEventListener('change', () => {
+      if (!rasterLayer) return;
+      if (inputLayerVisible.checked) rasterLayer.addTo(map); else map.removeLayer(rasterLayer);
+    });
+    inputLayerOpacity.addEventListener('input', () => { if (rasterLayer) rasterLayer.setOpacity(Number(inputLayerOpacity.value) / 100); });
+    resultLayerVisible.addEventListener('change', () => {
+      if (!indexLayer) return;
+      if (resultLayerVisible.checked) indexLayer.addTo(map); else map.removeLayer(indexLayer);
+    });
+    resultLayerOpacity.addEventListener('input', () => { if (indexLayer) indexLayer.setOpacity(Number(resultLayerOpacity.value) / 100); });
+    const layerPanel = document.getElementById('floating_layer_control');
+    const layerDragHandle = document.getElementById('layerPanelDragHandle');
+    layerDragHandle.addEventListener('pointerdown', event => {
+      const box = layerPanel.getBoundingClientRect();
+      const dx = event.clientX - box.left;
+      const dy = event.clientY - box.top;
+      layerDragHandle.setPointerCapture(event.pointerId);
+      const movePanel = moveEvent => {
+        layerPanel.style.left = `${Math.max(0, Math.min(window.innerWidth - box.width, moveEvent.clientX - dx))}px`;
+        layerPanel.style.top = `${Math.max(0, Math.min(window.innerHeight - 48, moveEvent.clientY - dy))}px`;
+        layerPanel.style.right = 'auto';
+      };
+      const stopMoving = () => {
+        layerDragHandle.removeEventListener('pointermove', movePanel);
+        layerDragHandle.removeEventListener('pointerup', stopMoving);
+        layerDragHandle.removeEventListener('pointercancel', stopMoving);
+      };
+      layerDragHandle.addEventListener('pointermove', movePanel);
+      layerDragHandle.addEventListener('pointerup', stopMoving);
+      layerDragHandle.addEventListener('pointercancel', stopMoving);
+    });
+    document.getElementById('browseFiles').onclick = () => fileInput.click();
+    dropZone.addEventListener('click', event => { if (event.target === dropZone || event.target.tagName === 'P') fileInput.click(); });
+    dropZone.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); fileInput.click(); } });
+    function setFile(file) {
+      if (!file) return;
+      if (!/\.tiff?$/i.test(file.name)) { uploadStatus.textContent = 'Choose a .tif or .tiff GeoTIFF file.'; return; }
+      selectedFile = file;
+      selectedFilesLabel.textContent = `${file.name} (${(file.size / 1048576).toFixed(2)} MB)`;
+      renderButton.disabled = false;
+      renderButton.textContent = 'Render on Map';
+      uploadStatus.textContent = '';
+      currentRaster = null;
+      setText('rasterInfo', 'TIFF selected. Select Render on Map to inspect its dimensions, CRS, and bands.');
+      setText('inputLayerLabel', `Input: ${file.name}`);
+      document.getElementById('bandControls').hidden = true;
+      const opacityControl = document.getElementById('rasterOpacityControl');
+      if (opacityControl) opacityControl.hidden = true;
+    }
+    fileInput.addEventListener('change', () => setFile(fileInput.files[0]));
+    ['dragenter', 'dragover'].forEach(name => dropZone.addEventListener(name, event => { event.preventDefault(); dropZone.style.borderColor = 'var(--cyan)'; }));
+    ['dragleave', 'drop'].forEach(name => dropZone.addEventListener(name, event => { event.preventDefault(); dropZone.style.borderColor = '#555'; }));
+    dropZone.addEventListener('drop', event => setFile(Array.from(event.dataTransfer.files || []).find(file => /\.tiff?$/i.test(file.name))));
+    function populateBandChoices(raster, bandCount) {
+      const controls = document.getElementById('bandControls');
+      controls.hidden = bandCount < 2;
+      ['redBand', 'greenBand', 'blueBand'].forEach((id, index) => {
+        const select = document.getElementById(id);
+        select.replaceChildren();
+        for (let band = 1; band <= bandCount; band += 1) {
+          const option = document.createElement('option');
+          option.value = String(band - 1);
+          option.textContent = `Band ${band}`;
+          select.appendChild(option);
+        }
+        select.value = String(Math.min(index, bandCount - 1));
+        select.onchange = () => { if (currentRaster) renderRasterLayer(); };
+      });
+      const opacityControl = document.getElementById('rasterOpacityControl');
+      const opacityInput = document.getElementById('rasterOpacity');
+      if (opacityControl) opacityControl.hidden = false;
+      if (opacityInput) opacityInput.oninput = () => { if (rasterLayer) rasterLayer.setOpacity(Number(opacityInput.value)); };
+      const indexChoices = [document.getElementById('indexBandA'), document.getElementById('indexBandB')];
+      indexChoices.forEach(select => {
+        select.replaceChildren();
+        for (let band = 1; band <= bandCount; band += 1) {
+          const option = document.createElement('option');
+          option.value = String(band - 1);
+          option.textContent = `Band ${band}`;
+          select.appendChild(option);
+        }
+        select.disabled = false;
+      });
+      document.getElementById('calculateIndex').disabled = bandCount < 2;
+      setText('indexStatus', bandCount < 2 ? 'At least two bands are needed for a spectral index.' : 'Choose an index and its input bands.');
+      setIndexDefaults();
+    }
+    function setIndexDefaults() {
+      if (!currentRaster) return;
+      const type = document.getElementById('indexType').value;
+      const maskControl = document.getElementById('waterMaskMode');
+      if (maskControl) {
+        maskControl.disabled = !['NDWI', 'MNDWI'].includes(type);
+        if (!['NDWI', 'MNDWI'].includes(type)) maskControl.checked = false;
+      }
+      const bandCount = currentRaster.numberOfRasters || currentRaster.values?.length || currentRaster.mins?.length || 1;
+      const defaults = {NDWI:[1,3], MNDWI:[1,10], NDVI:[3,2], NDMI:[3,10], NDBI:[10,3]}[type] || [0,1];
+      const first = Math.min(defaults[0], bandCount - 1);
+      const second = Math.min(defaults[1], bandCount - 1);
+      document.getElementById('indexBandA').value = String(first);
+      document.getElementById('indexBandB').value = String(second === first && bandCount > 1 ? (first + 1) % bandCount : second);
+    }
+    document.getElementById('indexType').addEventListener('change', setIndexDefaults);
+    function renderRasterLayer() {
+      if (!currentRaster) return;
+      if (indexLayer) { map.removeLayer(indexLayer); indexLayer = null; }
+      resultLayerVisible.checked = false;
+      resultLayerVisible.disabled = true;
+      resultLayerOpacity.disabled = true;
+      setText('resultLayerLabel', 'Result: Water Detection');
+      const raster = currentRaster;
+      const bandCount = raster.numberOfRasters || raster.values?.length || raster.mins?.length || 1;
+      const opacityInput = document.getElementById('rasterOpacity');
+      const opacity = opacityInput ? Number(opacityInput.value) : 0.85;
+      const colorizer = values => {
+        const indexes = bandCount >= 3
+          ? ['redBand', 'greenBand', 'blueBand'].map(id => Number(document.getElementById(id).value))
+          : [0, 0, 0];
+        const colors = indexes.map((band, channel) => {
+          const value = Number(values[band]);
+          const min = Number.isFinite(raster.mins?.[band]) ? raster.mins[band] : 0;
+          const max = Number.isFinite(raster.maxs?.[band]) && raster.maxs[band] > min ? raster.maxs[band] : min + 1;
+          return Math.max(0, Math.min(255, Math.round((value - min) * 255 / (max - min))));
+        });
+        if (values.every(value => value === null || value === undefined || !Number.isFinite(Number(value)))) return null;
+        return bandCount >= 3 ? `rgb(${colors[0]},${colors[1]},${colors[2]})` : `rgb(${colors[0]},${colors[0]},${colors[0]})`;
+      };
+      const layer = new window.GeoRasterLayer({georaster:raster, resolution:256, opacity, pixelValuesToColorFn:colorizer});
+      if (rasterLayer) map.removeLayer(rasterLayer);
+      rasterLayer = layer;
+      inputLayerVisible.disabled = false;
+      inputLayerOpacity.disabled = false;
+      rasterLayer.setOpacity(Number(inputLayerOpacity.value) / 100);
+      if (inputLayerVisible.checked) rasterLayer.addTo(map);
+      map.fitBounds(layer.getBounds());
+      uploadStatus.textContent = `Displaying ${selectedFile.name} with selected band mapping.`;
+    }
+    document.getElementById('calculateIndex').addEventListener('click', () => {
+      if (!currentRaster) return;
+      const raster = currentRaster;
+      const bands = raster.values;
+      const bandA = Number(document.getElementById('indexBandA').value);
+      const bandB = Number(document.getElementById('indexBandB').value);
+      const threshold = Number(document.getElementById('indexThreshold').value);
+      const maskOnly = Boolean(document.getElementById('waterMaskMode')?.checked);
+      const indexName = document.getElementById('indexType').value;
+      if (!bands || !bands[bandA] || !bands[bandB]) {
+        setText('indexStatus', 'This TIFF does not expose decoded band values for index calculation.');
+        return;
+      }
+      if (!Number.isFinite(threshold) || threshold < -1 || threshold > 1) {
+        setText('indexStatus', 'Threshold must be between -1 and 1.');
+        return;
+      }
+      const height = raster.height;
+      const width = raster.width;
+      const output = new Array(height);
+      for (let y = 0; y < height; y += 1) {
+        const row = new Float32Array(width);
+        for (let x = 0; x < width; x += 1) {
+          const a = Number(bands[bandA][y][x]);
+          const b = Number(bands[bandB][y][x]);
+          const sum = a + b;
+          const value = Number.isFinite(a) && Number.isFinite(b) && sum !== 0 ? (a - b) / sum : NaN;
+          row[x] = maskOnly && value <= threshold ? NaN : value;
+        }
+        output[y] = row;
+      }
+      const result = Object.assign({}, raster, {
+        values: [output],
+        numberOfRasters: 1,
+        mins: [-1],
+        maxs: [1],
+        ranges: [2]
+      });
+      const colorLayer = new window.GeoRasterLayer({
+        georaster: result,
+        resolution: 256,
+        opacity: Number(document.getElementById('rasterOpacity')?.value || 0.85),
+        pixelValuesToColorFn: values => {
+          const value = Number(values[0]);
+          if (!Number.isFinite(value)) return null;
+          if (maskOnly) return '#28d9ec';
+          const amount = Math.max(0, Math.min(1, (value + 1) / 2));
+          const red = Math.round(220 * (1 - amount) + 20 * amount);
+          const green = Math.round(110 * (1 - amount) + 205 * amount);
+          const blue = Math.round(55 * (1 - amount) + 225 * amount);
+          return `rgb(${red},${green},${blue})`;
+        }
+      });
+      if (indexLayer) map.removeLayer(indexLayer);
+      indexLayer = colorLayer;
+      resultLayerVisible.checked = false;
+      resultLayerVisible.disabled = false;
+      resultLayerOpacity.disabled = false;
+      indexLayer.setOpacity(Number(resultLayerOpacity.value) / 100);
+      setText('resultLayerLabel', `Result: ${indexName} from ${selectedFile?.name || 'local raster'}`);
+      setText('indexStatus', `${indexName} calculated from bands ${bandA + 1} and ${bandB + 1}${maskOnly ? `; values above ${threshold} shown as water` : ''}.`);
+    });
+    renderButton.addEventListener('click', async () => {
+      if (!selectedFile) return;
+      renderButton.disabled = true;
+      renderButton.textContent = 'Reading locally…';
+      uploadStatus.textContent = 'Reading GeoTIFF in browser memory…';
+      try {
+        if (!window.parseGeoraster) throw new Error('GeoTIFF parser failed to load from the CDN. Check your internet connection or CDN access, then reload.');
+        if (!window.GeoRasterLayer) throw new Error('Leaflet GeoTIFF layer failed to load from the CDN. Check your internet connection or CDN access, then reload.');
+        const parsedRaster = await window.parseGeoraster(await selectedFile.arrayBuffer());
+        if (!parsedRaster) throw new Error('The TIFF could not be parsed.');
+        let georaster = parsedRaster;
+        let approximatePlacement = false;
+        const hasSpatialBounds = Array.isArray(georaster.bounds) && georaster.bounds.length >= 4 && georaster.bounds.every(Number.isFinite);
+        const hasCoordinates = Number.isFinite(georaster.xmin) && Number.isFinite(georaster.ymin) && Number.isFinite(georaster.xmax) && Number.isFinite(georaster.ymax);
+        if (!hasSpatialBounds && !hasCoordinates) {
+          // The pixels have no known Earth location. For visual preview, map
+          // the raster extent onto the current viewport, clearly marked as approximate.
+          const view = map.getBounds();
+          const width = georaster.width;
+          const height = georaster.height;
+          if (!width || !height || !georaster.values) throw new Error('This TIFF has no spatial metadata and its pixels could not be read for preview.');
+          const west = view.getWest();
+          const east = view.getEast();
+          const south = view.getSouth();
+          const north = view.getNorth();
+          georaster = Object.assign({}, georaster, {
+            projection: 4326,
+            xmin: west,
+            xmax: east,
+            ymin: south,
+            ymax: north,
+            pixelWidth: (east - west) / width,
+            pixelHeight: (north - south) / height,
+            bounds: [west, south, east, north]
+          });
+          approximatePlacement = true;
+        }
+        currentRaster = georaster;
+        const bandCount = georaster.numberOfRasters || georaster.values?.length || georaster.mins?.length || 1;
+        populateBandChoices(georaster, bandCount);
+        const crs = georaster.projection ? `EPSG:${georaster.projection}` : 'unknown';
+        const bounds = georaster.xmin !== undefined ? `${georaster.xmin}, ${georaster.ymin}, ${georaster.xmax}, ${georaster.ymax}` : 'not embedded';
+        setText('rasterInfo', `${selectedFile.name} • ${georaster.width} × ${georaster.height} px • ${bandCount} band(s) • ${crs} • extent: ${bounds}`);
+        renderRasterLayer();
+        uploadStatus.textContent = approximatePlacement
+          ? 'Preview rendered over the current map view. This placement is approximate; the TIFF contains no location information, so it may not match the basemap.'
+          : `Rendered ${selectedFile.name} using its embedded spatial reference. The file was not uploaded.`;
+        renderButton.textContent = 'Rendered on Map';
+      } catch (error) {
+        uploadStatus.textContent = error.message;
+        renderButton.textContent = 'Render on Map';
+      } finally {
+        renderButton.disabled = !selectedFile;
+      }
+    });
+  </script>
+</body>
+</html>

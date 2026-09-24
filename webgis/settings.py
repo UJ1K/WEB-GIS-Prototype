@@ -11,16 +11,26 @@ https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Load local development settings from .env without requiring an extra package.
+ENV_FILE = BASE_DIR / '.env'
+if ENV_FILE.exists():
+    for line in ENV_FILE.read_text(encoding='utf-8').splitlines():
+        line = line.strip()
+        if line and not line.startswith('#') and '=' in line:
+            key, value = line.split('=', 1)
+            os.environ.setdefault(key.strip(), value.strip().strip('"\''))
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-m(kl_=dif@i!1(o4)(nj3=ly(g$@0nyhk+ljp7nja_#5s6vn_h'
+SECRET_KEY = 'klklklklk'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -76,10 +86,26 @@ WSGI_APPLICATION = 'webgis.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        # SQLite is for previewing the UI only. Use PostGIS for spatial data
+        # and migrations by setting USE_POSTGIS=1 in the local .env.
+        'ENGINE': 'django.contrib.gis.db.backends.postgis' if os.getenv('USE_POSTGIS', '0') == '1' else 'django.db.backends.sqlite3',
+        'NAME': os.getenv('POSTGRES_DB', 'webgis') if os.getenv('USE_POSTGIS', '0') == '1' else BASE_DIR / 'db.sqlite3',
+        **({
+            'USER': os.getenv('POSTGRES_USER', 'postgres'),
+            'PASSWORD': os.getenv('POSTGRES_PASSWORD', ''),
+            'HOST': os.getenv('POSTGRES_HOST', '127.0.0.1'),
+            'PORT': os.getenv('POSTGRES_PORT', '5432'),
+        } if os.getenv('USE_POSTGIS', '0') == '1' else {}),
     }
 }
+
+# GDAL/GEOS are supplied by the GDAL Python wheel in this virtual environment.
+# Environment variables can override these paths on another machine.
+OSGEO_DLL_DIR = BASE_DIR / '.venv' / 'Lib' / 'site-packages' / 'osgeo'
+if OSGEO_DLL_DIR.exists():
+    _osgeo_dll_handle = os.add_dll_directory(str(OSGEO_DLL_DIR))
+GDAL_LIBRARY_PATH = os.environ.get('GDAL_LIBRARY_PATH', str(OSGEO_DLL_DIR / 'gdal.dll'))
+GEOS_LIBRARY_PATH = os.environ.get('GEOS_LIBRARY_PATH', str(OSGEO_DLL_DIR / 'geos_c.dll'))
 
 
 # Password validation
