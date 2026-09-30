@@ -1,0 +1,212 @@
+<!doctype html>
+{% load static %}
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#031018">
+  <title>DISASTER WEBGIS</title>
+  <link rel="preconnect" href="https://unpkg.com">
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.css">
+  <link rel="stylesheet" href="{% static 'css/map.css' %}">
+</head>
+
+<body>
+
+  <!-- Map Area -->
+  <div id="map"></div>
+  <section id="floating_layer_control" aria-label="Map layers">
+    <header class="layer-panel-header" id="layerPanelDragHandle"><span aria-hidden="true">▤</span><span>Layers</span>
+    </header>
+    <div class="layer-row"><a href="/data-manager/" style="color:var(--cyan)">＋ Manage datasets</a></div>
+    <div id="datasetLayers" class="layer-row layer-order-list">Loading datasets…</div>
+    <div class="layer-row input-layer-row layer-order-row" data-layer-key="local-input">
+      <div class="layer-order-main"><label class="layer-order-visible" title="Toggle local raster"><input id="chk_layer_visible" type="checkbox" checked disabled aria-label="Show local raster"></label>
+      <span class="layer-row-title" id="inputLayerLabel">Input: Waiting for file…</span>
+      <button type="button" class="layer-order-options" aria-label="Ordering options" aria-expanded="false">⋮</button>
+      <div class="layer-order-actions" aria-label="Layer ordering controls"></div></div>
+      <div class="layer-row-controls"><label>Opacity <input id="sld_layer_opacity" type="range" min="0" max="100" value="100" disabled></label><button type="button" id="btn_layer_render" hidden disabled>Render</button></div>
+    </div>
+    <div class="layer-row layer-order-row" data-layer-key="calculated-index">
+      <div class="layer-order-main"><label class="layer-order-visible" title="Toggle calculated index"><input id="resultLayerVisible" type="checkbox" disabled aria-label="Show calculated index"></label>
+      <span class="layer-row-title" id="resultLayerLabel">Result: Water Detection</span>
+      <button type="button" class="layer-order-options" aria-label="Ordering options" aria-expanded="false">⋮</button>
+      <div class="layer-order-actions" aria-label="Layer ordering controls"></div></div>
+      <div class="layer-row-controls"><label>Opacity <input id="resultLayerOpacity" type="range" min="0" max="100" value="80" disabled></label></div>
+    </div>
+  </section>
+
+  <!-- Top Left Branding -->
+  <div class="top-left-widget">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+      <circle cx="12" cy="12" r="1" />
+      <path d="M12 2v20M2 12h20" />
+    </svg>
+    <select id="regionSelect" aria-label="Pilih wilayah">
+      <option value="semarang" selected>Semarang, Indonesia</option>
+      <option value="kalimantan">Kalimantan, Indonesia</option>
+      <option value="jakarta">Jakarta, Indonesia</option>
+      <option value="yogyakarta">Yogyakarta, Indonesia</option>
+    </select>
+  </div>
+
+  <!-- Top Right Tools -->
+  <div class="top-right-widget">
+    <button class="active" id="btn-labels">☑ Map Labels</button>
+    <button id="btn-terrain" aria-pressed="false">☐ Terrain</button>
+  </div>
+  <button class="mobile-menu" id="mobileMenu" aria-label="Buka pengaturan peta">☰</button>
+  <div class="basemap-switch" role="group" aria-label="Basemap">
+    <button id="basemapMap" type="button" class="active" aria-pressed="true">Map</button>
+    <button id="basemapSatellite" type="button" aria-pressed="false">Satellite</button>
+  </div>
+  <div class="drawing-toolbar" role="toolbar" aria-label="Draw map features">
+    <button type="button" data-draw-mode="pan" class="active" title="Pan map" aria-label="Pan map">✋</button>
+    <button type="button" data-draw-mode="point" title="Draw point" aria-label="Draw point">📍</button>
+    <button type="button" data-draw-mode="line" title="Draw line; double-click to finish"
+      aria-label="Draw line">／</button>
+    <button type="button" data-draw-mode="polygon" title="Draw polygon; double-click to finish"
+      aria-label="Draw polygon">⬠</button>
+    <button type="button" data-draw-mode="rectangle" title="Draw rectangle by clicking two corners"
+      aria-label="Draw rectangle">▭</button>
+  </div>
+
+  <!-- Side Navigation -->
+  <div class="side-tools">
+    {% comment %} <button aria-label="Search">🔍</button> {% endcomment %}
+    <button id="zoomIn" aria-label="Zoom In">+</button>
+    <button id="zoomOut" aria-label="Zoom Out">-</button>
+    <button id="homeExtent" aria-label="Default Extent">🏠</button>
+    <button id="measureTool" aria-label="Measure distance" title="Klik peta untuk mengukur jarak">📏</button>
+  </div>
+
+  {% comment %} <div class="map-caption">Powered by Esri | Sentinel-2 10m Land Use/Land Cover data by Esri and Impact
+    Observatory</div> {% endcomment %}
+
+  <!-- Bottom Edge-to-Edge Dashboard -->
+  {% comment %} <button class="mobile-dashboard-trigger" id="showDashboard"><span>▤ &nbsp; Tampilkan
+      Analisis</span><span>2017—2025 &nbsp;⌃</span></button> {% endcomment %}
+
+  <div class="dash" id="dashboard">
+    <!-- Toggle Dashboard Button -->
+    <button id="toggleDashboardBtn"
+      style="position: absolute; top: -25px; left: 20px; height: 25px; padding: 0 15px; background: var(--panel); border: 1px solid var(--line); border-bottom: none; border-radius: 8px 8px 0 0; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; z-index: 10;">
+      ▼
+    </button>
+
+    <!-- Section 1: Mode -->
+    <div class="dash-section" style="grid-column: span 0;"> <!-- Merged columns for more space if needed -->
+      <button class="close-dash" id="closeDashboard" style="display:none;float:right">Tutup ✕</button>
+      <div class="mode-container">
+        <div class="section-title">INPUT FILE</div>
+
+
+        <!-- Drag and Drop Zone -->
+        <div id="dropZone" role="button" tabindex="0" aria-label="Choose satellite imagery or shapefile">
+          <p>Drop a GeoTIFF to render it locally<br>Supported: .tif and .tiff — file stays in your browser</p>
+          <input type="file" id="fileInput" accept=".tif,.tiff,image/tiff" style="display:none">
+          <button type="button" id="browseFiles">Choose GeoTIFF</button>
+          <span id="selectedFiles" aria-live="polite">No files selected</span>
+        </div>
+        <div class="analysis-controls">
+          <span class="correction-toggle">Local preview • no upload</span>
+        </div>
+        <span id="uploadStatus" role="status" aria-live="polite"></span>
+
+      </div>
+    </div>
+
+
+
+
+
+
+    <!-- Section 4: Totals Chart -->
+    {% comment %} <div class="dash-section">
+      <div class="section-title">Graph <span id="chart-year">2017</span> ⤢</div>
+      <div
+        style="display:flex; justify-content:space-between; font-size:8px; color:var(--text-muted); margin-bottom:5px;">
+        <span>24%</span><span>14%</span><span>0.6%</span><span>37%</span><span>18%</span><span>5%</span>
+      </div>
+      <div class="chart-container">
+        <div class="bar-group">
+          <div class="bar bar-water"></div><span>Water</span>
+        </div>
+        <div class="bar-group">
+          <div class="bar bar-trees"></div><span>Trees</span>
+        </div>
+        <div class="bar-group">
+          <div class="bar bar-flooded"></div><span>Flooded</span>
+        </div>
+        <div class="bar-group">
+          <div class="bar bar-crops"></div><span>Crops</span>
+        </div>
+        <div class="bar-group">
+          <div class="bar bar-built"></div><span>Built</span>
+        </div>
+        <div class="bar-group">
+          <div class="bar bar-bare"></div><span>Bare</span>
+        </div>
+      </div>
+    </div> {% endcomment %}
+    <div class="dash-section section-adaptif">
+      <div class="section-title">LOCAL RASTER PREVIEW</div>
+      <div id="rasterInfo" class="raster-info">No TIFF loaded. File reading stays in browser memory.</div>
+      <div id="bandControls" class="band-controls" hidden>
+        <label>Red band<select id="redBand"></select></label>
+        <label>Green band<select id="greenBand"></select></label>
+        <label>Blue band<select id="blueBand"></select></label>
+      </div>
+    </div>
+
+    <div class="dash-section section-adaptif">
+      <div class="section-title">SPECTRAL INDEX</div>
+      <div id="indexControls" class="index-controls">
+        <label>Index type<select id="indexType">
+            <option value="NDVI">NDVI</option>
+            <option value="NDWI">NDWI</option>
+            <option value="NDBI">NDBI</option>
+          </select></label>
+        <label>Threshold<input id="indexThreshold" type="number" min="-1" max="1" step="0.05" value="0"></label>
+        <label>Band A<select id="indexBandA" disabled></select></label>
+        <label>Band B<select id="indexBandB" disabled></select></label>
+        <label style="grid-column:1/-1"><input id="waterMaskMode" type="checkbox"> Show only values above threshold as
+          water</label>
+        <button id="calculateIndex" disabled>Calculate Index</button>
+      </div>
+      <span id="indexStatus" class="raster-info" aria-live="polite">Select a TIFF to enable index calculation.</span>
+    </div>
+    <section class="dash-section spectral-styling" id="spectral_styling_panel" aria-labelledby="spectralStylingTitle">
+      <div class="section-title" id="spectralStylingTitle">INDEX STYLING</div>
+      <p class="palette-guidance">Choose a color ramp for the calculated index.</p>
+      <div id="palette_selector_container" class="palette-selector" role="group"
+        aria-label="Spectral index color palette">
+        <button type="button" class="palette-card" data-palette="pal_viridis" aria-pressed="true"><span
+            class="palette-swatch"></span><span class="palette-name"></span><span class="palette-use"></span></button>
+        <button type="button" class="palette-card" data-palette="pal_rdylgn" aria-pressed="false"><span
+            class="palette-swatch"></span><span class="palette-name"></span><span class="palette-use"></span></button>
+        <button type="button" class="palette-card" data-palette="pal_ndwi_blues" aria-pressed="false"><span
+            class="palette-swatch"></span><span class="palette-name"></span><span class="palette-use"></span></button>
+        <button type="button" class="palette-card" data-palette="pal_turbo" aria-pressed="false"><span
+            class="palette-swatch"></span><span class="palette-name"></span><span class="palette-use"></span></button>
+        <button type="button" class="palette-card" data-palette="pal_inferno" aria-pressed="false"><span
+            class="palette-swatch"></span><span class="palette-name"></span><span class="palette-use"></span></button>
+        <button type="button" class="palette-card" data-palette="pal_spectral" aria-pressed="false"><span
+            class="palette-swatch"></span><span class="palette-name"></span><span class="palette-use"></span></button>
+      </div>
+      <span id="paletteStatus" class="raster-info" aria-live="polite">Palette will apply when an index is
+        calculated.</span>
+    </section>
+  </div>
+
+
+  <script src="https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/georaster@1.6.0/dist/georaster.browser.bundle.min.js"></script>
+  <script>
+    window.SUPABASE_URL = "{{ supabase_url|default:''|escapejs }}";
+  </script>
+  <script src="{% static 'js/map.js' %}"></script>
+</body>
+
+</html>

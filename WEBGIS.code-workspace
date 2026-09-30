@@ -1,9 +1,5 @@
 {
-	"folders": [
-		{
-			"path": "../../../../Program_Independen/Semester_8/Data & Code/isccp_cloud_ml"
-		}
-	],
+	"folders": [],
 	"settings": {
 		"liveServer.settings.multiRootWorkspaceName": "Python"
 	}

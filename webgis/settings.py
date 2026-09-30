@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/6.1/ref/settings/
 
 from pathlib import Path
 import os
+from urllib.parse import parse_qs, unquote, urlparse
+from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -30,10 +32,12 @@ if ENV_FILE.exists():
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'klklklklk'
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', '')
+if not SECRET_KEY:
+    raise ImproperlyConfigured('Set DJANGO_SECRET_KEY in .env before starting Django.')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DJANGO_DEBUG', 'false').strip().lower() in {'1', 'true', 'yes', 'on'}
 
 ALLOWED_HOSTS = []
 
@@ -66,7 +70,7 @@ ROOT_URLCONF = 'webgis.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -84,20 +88,46 @@ WSGI_APPLICATION = 'webgis.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.1/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        # SQLite is for previewing the UI only. Use PostGIS for spatial data
-        # and migrations by setting USE_POSTGIS=1 in the local .env.
-        'ENGINE': 'django.contrib.gis.db.backends.postgis' if os.getenv('USE_POSTGIS', '0') == '1' else 'django.db.backends.sqlite3',
-        'NAME': os.getenv('POSTGRES_DB', 'webgis') if os.getenv('USE_POSTGIS', '0') == '1' else BASE_DIR / 'db.sqlite3',
-        **({
-            'USER': os.getenv('POSTGRES_USER', 'postgres'),
-            'PASSWORD': os.getenv('POSTGRES_PASSWORD', ''),
-            'HOST': os.getenv('POSTGRES_HOST', '127.0.0.1'),
-            'PORT': os.getenv('POSTGRES_PORT', '5432'),
-        } if os.getenv('USE_POSTGIS', '0') == '1' else {}),
+DATABASE_URL = os.getenv('DATABASE_URL', '').strip()
+if DATABASE_URL:
+    parsed_database_url = urlparse(DATABASE_URL)
+    if parsed_database_url.scheme not in {'postgres', 'postgresql'}:
+        raise ImproperlyConfigured('DATABASE_URL must use the postgres:// or postgresql:// scheme.')
+    database_options = parse_qs(parsed_database_url.query)
+    DATABASE_CONFIG = {
+        'NAME': unquote(parsed_database_url.path.lstrip('/')),
+        'USER': unquote(parsed_database_url.username or ''),
+        'PASSWORD': unquote(parsed_database_url.password or ''),
+        'HOST': parsed_database_url.hostname or '',
+        'PORT': str(parsed_database_url.port or 5432),
+        'OPTIONS': {
+            key: values[-1]
+            for key, values in database_options.items()
+            if key in {'sslmode', 'application_name', 'connect_timeout'}
+        },
     }
-}
+else:
+    # Supabase/PostgreSQL is mandatory. Do not silently start with an empty SQLite DB.
+    DATABASE_CONFIG = {
+        'NAME': os.getenv('POSTGRES_DB', ''),
+        'USER': os.getenv('POSTGRES_USER', ''),
+        'PASSWORD': os.getenv('POSTGRES_PASSWORD', ''),
+        'HOST': os.getenv('POSTGRES_HOST', ''),
+        'PORT': os.getenv('POSTGRES_PORT', '5432'),
+        'OPTIONS': {'sslmode': os.getenv('POSTGRES_SSLMODE', 'require')},
+    }
+
+required_database_values = ('NAME', 'USER', 'PASSWORD', 'HOST')
+missing_database_values = [key for key in required_database_values if not DATABASE_CONFIG.get(key)]
+if missing_database_values or '<' in DATABASE_CONFIG['PASSWORD'] or 'REPLACE_WITH_' in DATABASE_CONFIG['PASSWORD']:
+    raise ImproperlyConfigured(
+        'Configure the Supabase PostgreSQL connection in .env (DATABASE_URL or POSTGRES_* values) before starting Django.'
+    )
+
+DATABASES = {'default': {
+    'ENGINE': 'django.contrib.gis.db.backends.postgis',
+    **DATABASE_CONFIG,
+}}
 
 # GDAL/GEOS are supplied by the GDAL Python wheel in this virtual environment.
 # Environment variables can override these paths on another machine.
@@ -143,6 +173,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.1/howto/static-files/
 
 STATIC_URL = 'static/'
+STATICFILES_DIRS = [BASE_DIR / 'templates' / 'static']
 
 
 # Email
