@@ -17,16 +17,16 @@
   <!-- Map Area -->
   <div id="map"></div>
   <section id="floating_layer_control" aria-label="Map layers">
-    <header class="layer-panel-header" id="layerPanelDragHandle"><span aria-hidden="true">▤</span><span>Layers</span>
+    <header class="layer-panel-header" id="layerPanelDragHandle"><span aria-hidden="true">▤</span><span>Layers Management</span>
     </header>
     <div class="layer-row"><a href="/data-manager/" style="color:var(--cyan)">＋ Manage datasets</a></div>
     <div id="datasetLayers" class="layer-row layer-order-list">Loading datasets…</div>
-    <div class="layer-row input-layer-row layer-order-row" data-layer-key="local-input">
+    <div id="localRasterLayerRow" class="layer-row input-layer-row layer-order-row" data-layer-key="local-input" hidden>
       <div class="layer-order-main"><label class="layer-order-visible" title="Toggle local raster"><input id="chk_layer_visible" type="checkbox" checked disabled aria-label="Show local raster"></label>
       <span class="layer-row-title" id="inputLayerLabel">Input: Waiting for file…</span>
       <button type="button" class="layer-order-options" aria-label="Ordering options" aria-expanded="false">⋮</button>
       <div class="layer-order-actions" aria-label="Layer ordering controls"></div></div>
-      <div class="layer-row-controls"><label>Opacity <input id="sld_layer_opacity" type="range" min="0" max="100" value="100" disabled></label><button type="button" id="btn_layer_render" hidden disabled>Render</button></div>
+      <div class="layer-row-controls"><label>Opacity <input id="sld_layer_opacity" type="range" min="0" max="100" value="100" disabled></label><button type="button" id="replaceRasterButton" class="dataset-render-button" hidden>Replace</button><button type="button" id="btn_layer_render" class="dataset-render-button" hidden disabled>Render</button></div>
     </div>
     <div class="layer-row layer-order-row" data-layer-key="calculated-index">
       <div class="layer-order-main"><label class="layer-order-visible" title="Toggle calculated index"><input id="resultLayerVisible" type="checkbox" disabled aria-label="Show calculated index"></label>
@@ -88,7 +88,7 @@
   {% comment %} <button class="mobile-dashboard-trigger" id="showDashboard"><span>▤ &nbsp; Tampilkan
       Analisis</span><span>2017—2025 &nbsp;⌃</span></button> {% endcomment %}
 
-  <div class="dash" id="dashboard">
+  <div class="dash input-mode" id="dashboard">
     <!-- Toggle Dashboard Button -->
     <button id="toggleDashboardBtn"
       style="position: absolute; top: -25px; left: 20px; height: 25px; padding: 0 15px; background: var(--panel); border: 1px solid var(--line); border-bottom: none; border-radius: 8px 8px 0 0; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; z-index: 10;">
@@ -96,13 +96,13 @@
     </button>
 
     <!-- Section 1: Mode -->
-    <div class="dash-section" style="grid-column: span 0;"> <!-- Merged columns for more space if needed -->
-      <button class="close-dash" id="closeDashboard" style="display:none;float:right">Tutup ✕</button>
+    <div class="dash-section" id="section_1_input">
       <div class="mode-container">
         <div class="section-title">INPUT FILE</div>
 
 
         <!-- Drag and Drop Zone -->
+        <div id="input_upload_container">
         <div id="dropZone" role="button" tabindex="0" aria-label="Choose satellite imagery or shapefile">
           <p>Drop a GeoTIFF to render it locally<br>Supported: .tif and .tiff — file stays in your browser</p>
           <input type="file" id="fileInput" accept=".tif,.tiff,image/tiff" style="display:none">
@@ -113,6 +113,7 @@
           <span class="correction-toggle">Local preview • no upload</span>
         </div>
         <span id="uploadStatus" role="status" aria-live="polite"></span>
+        </div>
 
       </div>
     </div>
@@ -122,7 +123,7 @@
 
 
 
-    <!-- Section 4: Totals Chart -->
+    <!-- Section 2: Totals Chart -->
     {% comment %} <div class="dash-section">
       <div class="section-title">Graph <span id="chart-year">2017</span> ⤢</div>
       <div
@@ -150,8 +151,9 @@
         </div>
       </div>
     </div> {% endcomment %}
-    <div class="dash-section section-adaptif">
+    <div class="dash-section section-adaptif hidden" id="section_analysis_raster">
       <div class="section-title">LOCAL RASTER PREVIEW</div>
+      <button class="close-dash analysis-back-button" id="closeDashboard" type="button">← Choose another file</button>
       <div id="rasterInfo" class="raster-info">No TIFF loaded. File reading stays in browser memory.</div>
       <div id="bandControls" class="band-controls" hidden>
         <label>Red band<select id="redBand"></select></label>
@@ -160,7 +162,7 @@
       </div>
     </div>
 
-    <div class="dash-section section-adaptif">
+    <div class="dash-section section-adaptif hidden" id="section_analysis_index">
       <div class="section-title">SPECTRAL INDEX</div>
       <div id="indexControls" class="index-controls">
         <label>Index type<select id="indexType">
@@ -177,8 +179,8 @@
       </div>
       <span id="indexStatus" class="raster-info" aria-live="polite">Select a TIFF to enable index calculation.</span>
     </div>
-    <section class="dash-section spectral-styling" id="spectral_styling_panel" aria-labelledby="spectralStylingTitle">
-      <div class="section-title" id="spectralStylingTitle">INDEX STYLING</div>
+    <section class="dash-section spectral-styling hidden" id="spectral_styling_panel" aria-labelledby="spectralStylingTitle">
+      <div class="section-title" id="spectralStylingTitle">PALLETE STYLING</div>
       <p class="palette-guidance">Choose a color ramp for the calculated index.</p>
       <div id="palette_selector_container" class="palette-selector" role="group"
         aria-label="Spectral index color palette">

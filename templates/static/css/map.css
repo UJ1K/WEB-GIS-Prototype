@@ -9,6 +9,24 @@
   --text-muted: #6b8594;
 }
 
+:root {
+  /* Z-index scale */
+  --z-base: 100;
+  --z-caption: 500;
+  --z-side-tools: 700;
+  --z-widgets: 800;
+  --z-mobile-menu: 850;
+  --z-floating-panel: 900;
+  --z-modal: 1000;
+}
+
+.top-left-widget {
+  z-index: var(--z-widgets);
+}
+#floating_layer_control {
+  z-index: var(--z-floating-panel);
+}
+
 * {
   box-sizing: border-box;
 }
@@ -466,21 +484,38 @@ button {
   }
 }
 
-/* Top & Side Controls (Flat Dark Style) */
 .top-left-widget {
   position: absolute;
   z-index: 800;
-  top: 15px;
-  left: 15px;
+  top: 18px;
+  left: 18px;
   background: rgba(5, 18, 25, 0.88);
   border: 1px solid var(--line);
-  color: var(--text-main);
+  
+  /* UPDATED: Neon green text with a glowing shadow */
+  color: var(--cyan);
+  text-shadow: 0 0 8px rgba(82, 255, 154, 0.4);
+  
   padding: 6px 9px;
   display: flex;
   align-items: center;
   gap: 8px;
   font-size: 12px;
   font-weight: 500;
+}
+
+.top-left-widget select {
+  width: 178px;
+  
+  /* UPDATED: Matches the neon green text and glow */
+  color: var(--cyan);
+  text-shadow: 0 0 8px rgba(82, 255, 154, 0.4);
+  
+  background: transparent;
+  border: 0;
+  outline: 0;
+  appearance: none;
+  cursor: pointer;
 }
 
 .top-left-widget:after {
@@ -491,19 +526,11 @@ button {
   color: var(--text-muted);
 }
 
-.top-left-widget select {
-  width: 178px;
-  color: var(--text-main);
-  background: transparent;
-  border: 0;
-  outline: 0;
-  appearance: none;
-  cursor: pointer;
-}
 
+/* UPDATED: Matches the dark theme instead of a light theme */
 .top-left-widget option {
-  color: #10212b;
-  background: #eff6f7;
+  color: var(--text-main, #ffffff); 
+  background: #051219; /* Solid hex version of your rgba(5, 18, 25) */
 }
 
 .top-right-widget {
@@ -536,6 +563,12 @@ button {
 .top-right-widget button.active {
   background: var(--panel-hover);
   color: white;
+}
+
+.top-left-widget select:focus,
+.top-left-widget select:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 .basemap-switch {
@@ -579,7 +612,7 @@ button {
 
 .drawing-toolbar button {
   min-width: 38px;
-  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
   font-size: 16px
 }
 
@@ -654,12 +687,26 @@ button {
   transition: transform 0.3s ease-in-out;
 }
 
+
 .dash-section {
   padding: 15px 20px;
   border-right: 1px solid var(--line);
   display: flex;
   flex-direction: column;
 }
+
+.dash.input-mode { grid-template-columns: minmax(0, 1fr) }
+.dash.input-mode #section_1_input { grid-column: 1/-1; align-items: center; justify-content: center; border-right: 0; text-align: center }
+.dash.input-mode .mode-container { width: min(100%, 420px); max-width: 420px; align-items: center; text-align: center }
+.dash.analysis-mode { grid-template-columns: repeat(3, minmax(0, 1fr)) }
+.dash.analysis-mode .dash-section { align-items: center; text-align: center }
+.dash.analysis-mode .section-title { width: 100%; text-align: center }
+.dash.analysis-mode .analysis-back-button { align-self: center }
+.dash.analysis-mode .raster-info, .dash.analysis-mode .band-controls, .dash.analysis-mode .index-controls, .dash.analysis-mode .palette-selector { width: 100% }
+
+.hidden { display: none !important }
+.analysis-back-button { display: inline-flex; align-self: flex-start; margin: 0 0 8px; padding: 4px 8px; border: 1px solid var(--line); border-radius: 4px; background: #0a202a; color: var(--text-main); font-size: 10px; cursor: pointer }
+.analysis-back-button:hover { border-color: var(--cyan); color: var(--cyan) }
 
 .dash-section:last-child {
   border-right: none;
@@ -738,6 +785,10 @@ button {
   text-align: center;
   transition: all 0.2s ease;
 }
+
+#input_upload_container { transition: opacity .2s ease, max-height .25s ease, margin .25s ease; max-height: 360px; overflow: hidden }
+#input_upload_container.is-collapsed { max-height: 0; opacity: 0; margin: 0; pointer-events: none }
+#localRasterLayerRow[hidden] { display: none }
 
 #dropZone p {
   margin: 0 0 10px 0;
@@ -942,18 +993,36 @@ button {
   z-index: 900;
   top: 102px;
   right: 15px;
-  width: min(280px, calc(100vw - 30px));
-  max-height: min(55vh, 420px);
+  
+  /* INCREASED: Changed 280px to 360px */
+  width: min(360px, calc(100vw - 30px)); 
+  
+  /* INCREASED: Changed 55vh to 75vh, and 420px to 600px */
+  max-height: min(75vh, 600px); 
+  
   overflow: auto;
   background: rgba(2, 17, 26, .96);
   border: 1px solid var(--line);
   color: var(--text-main);
-  box-shadow: 0 8px 28px rgba(0, 0, 0, .35)
+  box-shadow: 0 8px 28px rgba(0, 0, 0, .35);
+}
+
+/* Chrome/Edge/Safari Scrollbar */
+#floating_layer_control::-webkit-scrollbar {
+  width: 6px;
+}
+#floating_layer_control::-webkit-scrollbar-track {
+  background: transparent;
+}
+#floating_layer_control::-webkit-scrollbar-thumb {
+  background-color: #315363;
+  border-radius: 10px;
 }
 
 .layer-panel-header {
   position: sticky;
   top: 0;
+  z-index: 10; /* Add this to ensure it stays above scrolling content */
   display: flex;
   align-items: center;
   gap: 8px;
@@ -963,21 +1032,62 @@ button {
   color: var(--cyan);
   font-weight: 700;
   cursor: move;
-  user-select: none
+  user-select: none;
 }
 
-.layer-row {
-  padding: 9px 11px;
-  border-bottom: 1px solid var(--line)
+.layer-row,
+.input-layer-row,
+.database-raster-row,
+.layer-order-row {
+  padding: 10px 15px !important;
+  border-bottom: 1px solid var(--line) !important;
+}
+
+.layer-row-controls,
+.database-raster-controls {
+  display: grid !important;
+  /* 50px for "Opacity", 1fr to stretch the slider, auto for the button (if it exists) */
+  grid-template-columns: 50px 1fr auto !important; 
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px !important;
+  /* Indent the controls to perfectly align under the layer title */
+  padding-left: 27px !important; 
+}
+
+.layer-row:hover {
+  background: rgba(9, 49, 75, 0.3); /* A washed out version of var(--panel-hover) */
 }
 
 .layer-row:last-child {
-  border-bottom: 0
+  border-bottom: 0;
 }
 
+.layer-order-main, 
 .input-layer-row .layer-row-controls {
   grid-template-columns: auto minmax(70px, 1fr) auto;
-  align-items: center
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  min-width: 0;
+}
+
+.layer-row-controls,
+.database-raster-controls {
+  display: grid;
+  /* Fixed width for label, flexible slider, auto-width for button */
+  grid-template-columns: 55px 1fr 65px; 
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  /* Indent controls to perfectly align under the layer title, skipping the checkbox */
+  padding-left: 27px; 
+}
+
+.layer-row-controls input[type=range],
+.database-raster-controls input[type=range] {
+  width: 100% !important;
+  margin: 0 !important;
 }
 
 .layer-row-title {
@@ -1001,8 +1111,9 @@ button {
 
 .layer-row-controls input[type=range] {
   width: 100%;
-  margin: 3px 0;
-  accent-color: var(--cyan)
+  margin: 6px 0 2px 0; /* Gives the slider a bit more breathing room */
+  accent-color: var(--cyan);
+  cursor: pointer;
 }
 
 .layer-row-controls input[type=checkbox] {
@@ -1256,12 +1367,12 @@ input[type=range]::-webkit-slider-thumb {
 }
 
 .bar-built {
-  background: #cd5c5c;
+  background: #3f3636;
   height: 25%;
 }
 
 .bar-bare {
-  background: #a9a9a9;
+  background: #23bd3d;
   height: 10%;
 }
 
@@ -1302,11 +1413,11 @@ input[type=range]::-webkit-slider-thumb {
   .mobile-menu {
     display: grid;
     position: absolute;
-    z-index: 850;
-    right: 9px;
-    top: 9px;
-    width: 34px;
-    height: 34px;
+    z-index: var(--z-mobile-menu);
+    width: 44px; /* Increased from 34px */
+    height: 44px; /* Increased from 34px */
+    right: 5px;
+    top: 5px;
     background: rgba(5, 18, 25, .9);
     border: 1px solid var(--line);
     place-items: center
@@ -1335,6 +1446,8 @@ input[type=range]::-webkit-slider-thumb {
     top: 54px;
     left: 9px;
     max-width: calc(100% - 18px);
+    min-width: 44px; /* Increased to ensure easy tapping */
+    min-height: 44px;
     flex-wrap: wrap
   }
 
@@ -1345,6 +1458,8 @@ input[type=range]::-webkit-slider-thumb {
 
   .side-tools {
     top: 99px;
+    width: 44px;
+    height: 44px;
     left: 9px
   }
 
@@ -1410,4 +1525,18 @@ input[type=range]::-webkit-slider-thumb {
   .mobile-dashboard-trigger[hidden] {
     display: none
   }
+}
+/* Global custom focus ring */
+button:focus-visible,
+select:focus-visible,
+input:focus-visible,
+.palette-card:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+  box-shadow: 0 0 8px var(--cyan-dim);
+}
+
+/* Remove default focus overrides if they conflict */
+.top-left-widget select:focus {
+  outline: none; /* Hide default for mouse users */
 }

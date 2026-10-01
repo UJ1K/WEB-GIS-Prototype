@@ -4,7 +4,7 @@
   let activeRegion = 'semarang';
   const map = new maplibregl.Map({
     container: 'map',
-    style: { version: 8, sources: { topo: { type: 'raster', tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}'], tileSize: 256, attribution: 'Tiles © Esri — Source: Esri, Maxar, Earthstar Geographics' }, satellite: { type: 'raster', tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'], tileSize: 256, attribution: 'Tiles © Esri, Maxar, Earthstar Geographics' }, labels: { type: 'raster', tiles: ['https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'], tileSize: 256 } }, layers: [{ id: 'topo-layer', type: 'raster', source: 'topo' }, { id: 'satellite-layer', type: 'raster', source: 'satellite', layout: { visibility: 'none' } }, { id: 'labels-layer', type: 'raster', source: 'labels' }] },
+    style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
     center: regions[activeRegion], zoom: 11, attributionControl: true
   });
   const mapReady = new Promise(resolve => map.once('load', resolve));
@@ -16,8 +16,8 @@
   function registerOrderedLayer(key, layerIds) { orderLayerGroups.set(key, layerIds.filter(id => map.getLayer(id))); refreshLayerOrderControls(); }
   function orderedLayerKeys() { return [...document.querySelectorAll('.layer-order-row')].map(row => row.dataset.layerKey).filter(key => orderLayerGroups.has(key)); }
   function syncMapLayerOrder() {
-    const baseLayer = map.getStyle()?.layers?.find(layer => ['topo-layer', 'satellite-layer', 'labels-layer'].includes(layer.id))?.id;
-    orderedLayerKeys().forEach(key => (orderLayerGroups.get(key) || []).forEach(id => { if (map.getLayer(id)) map.moveLayer(id, baseLayer); }));
+    const labelBoundary = map.getStyle()?.layers?.find(layer => layer.type === 'symbol')?.id;
+    orderedLayerKeys().forEach(key => (orderLayerGroups.get(key) || []).forEach(id => { if (map.getLayer(id)) map.moveLayer(id, labelBoundary); }));
   }
   function refreshLayerOrderControls() {
     document.querySelectorAll('.layer-order-row').forEach(row => {
@@ -37,14 +37,8 @@
     if (target === index) return;
     keys.splice(index, 1); keys.splice(target, 0, key);
     const rows = new Map([...document.querySelectorAll('.layer-order-row')].map(row => [row.dataset.layerKey, row]));
-    const list = byId('datasetLayers'), managedRows = keys.map(layerKey => rows.get(layerKey)).filter(Boolean);
-    managedRows.filter(row => row.parentElement === list).forEach(row => list.append(row));
-    const floatingRow = rows.get(key), reference = target < keys.length - 1 ? rows.get(keys[target + 1]) : null;
-    if (floatingRow && floatingRow.parentElement !== list) {
-      const floating = byId('floating_layer_control');
-      if (reference?.parentElement === floating) floating.insertBefore(floatingRow, reference);
-      else if (!reference) floating.append(floatingRow);
-    }
+    const list = byId('datasetLayers');
+    keys.map(layerKey => rows.get(layerKey)).filter(Boolean).forEach(row => list.append(row));
     syncMapLayerOrder();
   }
   function isGeographicBounds(bounds) {
@@ -136,8 +130,13 @@
   byId('regionSelect').onchange = e => { activeRegion = e.target.value; map.flyTo({ center: regions[activeRegion], zoom: 11 }); };
   byId('btn-terrain').onclick = e => { const on = e.currentTarget.getAttribute('aria-pressed') !== 'true'; e.currentTarget.setAttribute('aria-pressed', String(on)); e.currentTarget.classList.toggle('active', on); e.currentTarget.innerHTML = on ? '☑ Terrain' : '☐ Terrain'; byId('map').style.filter = on ? 'saturate(1.2) contrast(1.1)' : 'none'; };
   const btnLabels = byId('btn-labels'); let labelsEnabled = true, currentBasemap = 'map';
-  function selectBasemap(mode) { currentBasemap = mode; const sat = mode === 'satellite'; setVisibility('topo-layer', !sat); setVisibility('satellite-layer', sat); setVisibility('labels-layer', !sat && labelsEnabled); btnLabels.disabled = sat; btnLabels.classList.toggle('active', !sat && labelsEnabled); btnLabels.innerHTML = !sat && labelsEnabled ? '☑ Map Labels' : '☐ Map Labels'; byId('basemapMap').classList.toggle('active', !sat); byId('basemapSatellite').classList.toggle('active', sat); byId('basemapMap').setAttribute('aria-pressed', String(!sat)); byId('basemapSatellite').setAttribute('aria-pressed', String(sat)); }
-  btnLabels.onclick = () => { labelsEnabled = !labelsEnabled; setVisibility('labels-layer', labelsEnabled && currentBasemap === 'map'); btnLabels.classList.toggle('active', labelsEnabled && currentBasemap === 'map'); btnLabels.innerHTML = labelsEnabled ? '☑ Map Labels' : '☐ Map Labels'; };
+  function setMapLabelsVisible(visible) {
+    map.getStyle()?.layers?.filter(layer => layer.type === 'symbol').forEach(layer => {
+      if (map.getLayer(layer.id)) map.setLayoutProperty(layer.id, 'visibility', visible ? 'visible' : 'none');
+    });
+  }
+  function selectBasemap(mode) { currentBasemap = mode; const sat = mode === 'satellite'; setVisibility('topo-layer', !sat); setVisibility('satellite-layer', sat); setMapLabelsVisible(labelsEnabled); btnLabels.classList.toggle('active', labelsEnabled); btnLabels.innerHTML = labelsEnabled ? '☑ Map Labels' : '☐ Map Labels'; byId('basemapMap').classList.toggle('active', !sat); byId('basemapSatellite').classList.toggle('active', sat); byId('basemapMap').setAttribute('aria-pressed', String(!sat)); byId('basemapSatellite').setAttribute('aria-pressed', String(sat)); }
+  btnLabels.onclick = () => { labelsEnabled = !labelsEnabled; setMapLabelsVisible(labelsEnabled); btnLabels.classList.toggle('active', labelsEnabled); btnLabels.innerHTML = labelsEnabled ? '☑ Map Labels' : '☐ Map Labels'; };
   byId('basemapMap').onclick = () => selectBasemap('map'); byId('basemapSatellite').onclick = () => selectBasemap('satellite');
   byId('mobileMenu').onclick = () => document.querySelector('.top-right-widget').classList.toggle('mobile-open');
 
@@ -346,6 +345,20 @@
   // Layer initialization obeying Z-index hierarchy:
   // Area/Raster (z=200) < Line (z=300) < Point (z=400)
   map.on('load', () => {
+    // OpenFreeMap supplies vector labels; imagery/topographic tiles sit below
+    // its symbol layers so labels remain readable on either basemap.
+    map.addSource('topo', { type: 'raster', tiles: ['https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json'], tileSize: 256, attribution: 'Tiles © Esri — Source: Esri, Maxar, Earthstar Geographics' });
+    map.addSource('satellite', { type: 'raster', tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'], tileSize: 256, attribution: 'Tiles © Esri, Maxar, Earthstar Geographics' });
+    const firstSymbolLayer = map.getStyle().layers.find(layer => layer.type === 'symbol')?.id;
+    map.addLayer({ id: 'topo-layer', type: 'raster', source: 'topo' }, firstSymbolLayer);
+    map.addLayer({ id: 'satellite-layer', type: 'raster', source: 'satellite', layout: { visibility: 'none' } }, firstSymbolLayer);
+    const countryLabels = map.getLayer('label_country');
+    if (countryLabels) map.setLayoutProperty('label_country', 'text-field', [
+      'format', ['get', 'name_en'], { 'font-scale': 1.2 }, '\n', {}, ['get', 'name'],
+      { 'font-scale': 0.8, 'text-font': ['literal', ['Noto Sans Regular']] }
+    ]);
+    setMapLabelsVisible(labelsEnabled);
+
     // 1. Vector Drawn Layers
     map.addSource('drawn-data', { type: 'geojson', data: emptyFC() });
     map.addLayer({ id: 'drawn-polygons', type: 'fill', source: 'drawn-data', filter: ['==', ['geometry-type'], 'Polygon'], paint: { 'fill-color': '#1aa6bb', 'fill-opacity': .28 } });
@@ -426,13 +439,24 @@
   function renderIndexPalette() { if (!currentIndexResult) return; if (indexRecord) removeImageLayer(indexRecord); indexRecord = addRasterImage(currentIndexResult, values => { const value = Number(values[0]); return Number.isFinite(value) ? paletteColor(value) : null; }, Number(resultOpacity.value) / 100, [0]); registerOrderedLayer('calculated-index', [indexRecord.layerId]); setVisibility(indexRecord.layerId, resultVisible.checked); setText('paletteStatus', `${activePalette.name} applied to the calculated index.`); }
   document.querySelectorAll('.palette-card').forEach(button => { const palette = palettes[button.dataset.palette]; if (!palette) return; button.querySelector('.palette-swatch').style.backgroundImage = `linear-gradient(to right, ${palette.colors.join(', ')})`; button.querySelector('.palette-name').textContent = palette.name; button.querySelector('.palette-use').textContent = palette.use; button.addEventListener('click', () => { activePalette = palette; document.querySelectorAll('.palette-card').forEach(card => card.setAttribute('aria-pressed', String(card === button))); if (currentIndexResult) renderIndexPalette(); else setText('paletteStatus', `${palette.name} selected; it will apply when an index is calculated.`); }); });
   const fileInput = byId('fileInput'), dropZone = byId('dropZone'), selectedFilesLabel = byId('selectedFiles'), uploadStatus = byId('uploadStatus'), renderButton = byId('btn_layer_render');
+  const replaceRasterButton = byId('replaceRasterButton');
   const inputVisible = byId('chk_layer_visible'), inputOpacity = byId('sld_layer_opacity'), resultVisible = byId('resultLayerVisible'), resultOpacity = byId('resultLayerOpacity');
   inputVisible.onchange = () => { if (rasterRecord) setVisibility(rasterRecord.layerId, inputVisible.checked); }; inputOpacity.oninput = () => { if (rasterRecord) setOpacity(rasterRecord.layerId, Number(inputOpacity.value) / 100); }; resultVisible.onchange = () => { if (indexRecord) setVisibility(indexRecord.layerId, resultVisible.checked); }; resultOpacity.oninput = () => { if (indexRecord) setOpacity(indexRecord.layerId, Number(resultOpacity.value) / 100); };
   registerOrderedLayer('local-input', []); registerOrderedLayer('calculated-index', []);
+  function setDashboardMode(analysis) {
+    byId('dashboard').classList.toggle('analysis-mode', analysis);
+    byId('dashboard').classList.toggle('input-mode', !analysis);
+    byId('section_1_input').classList.toggle('hidden', analysis);
+    ['section_analysis_raster', 'section_analysis_index', 'spectral_styling_panel'].forEach(id => byId(id).classList.toggle('hidden', !analysis));
+  }
   function setFile(file) {
     if (!file) return;
     if (!/\.tiff?$/i.test(file.name)) { uploadStatus.textContent = 'Choose a .tif or .tiff GeoTIFF file.'; return; }
     selectedFile = file;
+    byId('localRasterLayerRow').hidden = false;
+    byId('input_upload_container').classList.remove('is-collapsed');
+    setDashboardMode(true);
+    replaceRasterButton.hidden = false;
     selectedFilesLabel.textContent = `${file.name} (${(file.size / 1048576).toFixed(2)} MB)`;
     renderButton.disabled = false; renderButton.hidden = false; renderButton.textContent = 'Render'; uploadStatus.textContent = '';
     currentRaster = null; currentIndexResult = null;
@@ -444,6 +468,17 @@
     byId('bandControls').hidden = true;
     const opacityControl = byId('rasterOpacityControl'); if (opacityControl) opacityControl.hidden = true;
   }
+  byId('closeDashboard').addEventListener('click', () => {
+    if (rasterRecord) removeImageLayer(rasterRecord); rasterRecord = null; registerOrderedLayer('local-input', []);
+    if (indexRecord) removeImageLayer(indexRecord); indexRecord = null; registerOrderedLayer('calculated-index', []);
+    currentRaster = null; currentIndexResult = null; selectedFile = null; fileInput.value = '';
+    byId('localRasterLayerRow').hidden = true; replaceRasterButton.hidden = true; renderButton.hidden = true; renderButton.disabled = true;
+    inputVisible.checked = true; inputVisible.disabled = true; resultVisible.checked = false; resultVisible.disabled = true; resultOpacity.disabled = true; inputOpacity.disabled = true;
+    selectedFilesLabel.textContent = 'No files selected'; uploadStatus.textContent = ''; setText('inputLayerLabel', 'Input: Waiting for file…');
+    setText('rasterInfo', 'No TIFF loaded. File reading stays in browser memory.'); setText('indexStatus', 'Select a TIFF to enable index calculation.'); setText('resultLayerLabel', 'Result: Water Detection');
+    setDashboardMode(false);
+  });
+  replaceRasterButton.onclick = () => fileInput.click();
   byId('browseFiles').onclick = () => fileInput.click(); dropZone.addEventListener('click', e => { if (e.target === dropZone || e.target.tagName === 'P') fileInput.click(); }); dropZone.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInput.click(); } }); fileInput.addEventListener('change', () => setFile(fileInput.files[0]));
   ['dragenter', 'dragover'].forEach(n => dropZone.addEventListener(n, e => { e.preventDefault(); dropZone.style.borderColor = 'var(--cyan)'; }));['dragleave', 'drop'].forEach(n => dropZone.addEventListener(n, e => { e.preventDefault(); dropZone.style.borderColor = '#555'; })); dropZone.addEventListener('drop', e => setFile(Array.from(e.dataTransfer.files || []).find(f => /\.tiff?$/i.test(f.name))));
   function populateBands(raster, count) { const controls = byId('bandControls'); controls.hidden = count < 2;['redBand', 'greenBand', 'blueBand'].forEach((id, index) => { const sel = byId(id); sel.replaceChildren(); for (let b = 0; b < count; b++) { const o = document.createElement('option'); o.value = String(b); o.textContent = `Band ${b + 1}`; sel.append(o); } sel.value = String(Math.min(index, count - 1)); sel.onchange = () => { if (currentRaster) renderLocalRaster(); }; }); const opacityControl = byId('rasterOpacityControl'), opacity = byId('rasterOpacity'); if (opacityControl) opacityControl.hidden = false; if (opacity) opacity.oninput = () => { if (rasterRecord) setOpacity(rasterRecord.layerId, Number(opacity.value)); };[byId('indexBandA'), byId('indexBandB')].forEach(sel => { sel.replaceChildren(); for (let b = 0; b < count; b++) { const o = document.createElement('option'); o.value = String(b); o.textContent = `Band ${b + 1}`; sel.append(o); } sel.disabled = false; }); byId('calculateIndex').disabled = count < 2; setText('indexStatus', count < 2 ? 'At least two bands are needed for a spectral index.' : 'Choose an index and its input bands.'); setIndexDefaults(); }
@@ -451,7 +486,7 @@
   byId('indexType').addEventListener('change', setIndexDefaults);
   function renderLocalRaster() { if (!currentRaster) return; if (indexRecord) { removeImageLayer(indexRecord); indexRecord = null; registerOrderedLayer('calculated-index', []); } resultVisible.checked = false; resultVisible.disabled = true; resultOpacity.disabled = true; setText('resultLayerLabel', 'Result: Water Detection'); const raster = currentRaster, count = raster.numberOfRasters || raster.values?.length || 1; const rgb = count >= 3 ? ['redBand', 'greenBand', 'blueBand'].map(id => Number(byId(id).value)) : [0, 0, 0]; const colorAt = values => { if (values.every(v => v == null || !Number.isFinite(Number(v)))) return null; return rgb.map(i => stretch(values[i], raster.mins?.[i], raster.maxs?.[i])).concat(255); }; if (rasterRecord) removeImageLayer(rasterRecord); rasterRecord = addRasterImage(raster, colorAt, Number(byId('rasterOpacity')?.value || .85), rgb); registerOrderedLayer('local-input', [rasterRecord.layerId]); inputVisible.disabled = false; inputOpacity.disabled = false; setOpacity(rasterRecord.layerId, Number(inputOpacity.value) / 100); setVisibility(rasterRecord.layerId, inputVisible.checked); const b = rasterRecord.bounds; map.fitBounds(mapFitBounds(b), { padding: 24 }); uploadStatus.textContent = `Displaying ${selectedFile.name} with selected band mapping.`; }
   byId('calculateIndex').addEventListener('click', () => { if (!currentRaster) return; const raster = currentRaster, bands = raster.values, a = Number(byId('indexBandA').value), b = Number(byId('indexBandB').value), threshold = Number(byId('indexThreshold').value), mask = Boolean(byId('waterMaskMode')?.checked), name = byId('indexType').value; if (!bands?.[a] || !bands?.[b]) { setText('indexStatus', 'This TIFF does not expose decoded band values for index calculation.'); return; } if (!Number.isFinite(threshold) || threshold < -1 || threshold > 1) { setText('indexStatus', 'Threshold must be between -1 and 1.'); return; } const output = Array.from({ length: raster.height }, (_, y) => { const row = new Float32Array(raster.width); for (let x = 0; x < raster.width; x++) { const av = Number(bands[a][y][x]), bv = Number(bands[b][y][x]), sum = av + bv, v = Number.isFinite(av) && Number.isFinite(bv) && sum !== 0 ? (av - bv) / sum : NaN; row[x] = mask && v <= threshold ? NaN : v; } return row; }); const result = { ...raster, values: [output], mins: [-1], maxs: [1], numberOfRasters: 1 }; currentIndexResult = result; renderIndexPalette(); resultVisible.checked = true; resultVisible.disabled = false; resultOpacity.disabled = false; if (indexRecord) setVisibility(indexRecord.layerId, true); setOpacity(indexRecord.layerId, Number(resultOpacity.value) / 100); registerOrderedLayer('calculated-index', indexRecord ? [indexRecord.layerId] : []); setText('resultLayerLabel', `Result: ${name} from ${selectedFile?.name || 'local raster'}`); setText('indexStatus', `${name} calculated from bands ${a + 1} and ${b + 1}${mask ? `; values above ${threshold} shown as water` : ''}.`); });
-  renderButton.addEventListener('click', async () => { if (!selectedFile) return; renderButton.disabled = true; renderButton.textContent = 'Rendering…'; uploadStatus.textContent = 'Reading GeoTIFF in browser memory…'; try { if (!window.parseGeoraster) throw new Error('GeoTIFF parser failed to load. Check internet/CDN access and reload.'); const raster = await window.parseGeoraster(await selectedFile.arrayBuffer()); if (!raster) throw new Error('The TIFF could not be parsed.'); let georaster = raster, approximate = false; if (!boundsOf(georaster)) { await mapReady; const bounds = map.getBounds(); if (!georaster.width || !georaster.height || !georaster.values) throw new Error('This TIFF has no spatial metadata and its pixels could not be read.'); georaster = { ...georaster, projection: 4326, xmin: bounds.getWest(), xmax: bounds.getEast(), ymin: bounds.getSouth(), ymax: bounds.getNorth(), bounds: [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()] }; approximate = true; } await mapReady; currentRaster = georaster; const count = georaster.numberOfRasters || georaster.values?.length || georaster.mins?.length || 1; populateBands(georaster, count); const b = boundsOf(georaster), crs = projectionCode(georaster); setText('rasterInfo', `${selectedFile.name} • ${georaster.width} × ${georaster.height} px • ${count} band(s) • ${crs ? `EPSG:${crs}` : 'CRS not identified'} • extent: ${b.join(', ')}`); renderLocalRaster(); uploadStatus.textContent = approximate ? 'Preview placed over current map view as an approximation; the TIFF contains no location information.' : `Rendered ${selectedFile.name} using its embedded extent. File was not uploaded.`; renderButton.hidden = true; } catch (error) { uploadStatus.textContent = error.message; renderButton.textContent = 'Render'; } finally { renderButton.disabled = !selectedFile; } });
+  renderButton.addEventListener('click', async () => { if (!selectedFile) return; renderButton.disabled = true; renderButton.textContent = 'Rendering…'; setText('rasterInfo', 'Reading GeoTIFF in browser memory…'); try { if (!window.parseGeoraster) throw new Error('GeoTIFF parser failed to load. Check internet/CDN access and reload.'); const raster = await window.parseGeoraster(await selectedFile.arrayBuffer()); if (!raster) throw new Error('The TIFF could not be parsed.'); let georaster = raster, approximate = false; if (!boundsOf(georaster)) { await mapReady; const bounds = map.getBounds(); if (!georaster.width || !georaster.height || !georaster.values) throw new Error('This TIFF has no spatial metadata and its pixels could not be read.'); georaster = { ...georaster, projection: 4326, xmin: bounds.getWest(), xmax: bounds.getEast(), ymin: bounds.getSouth(), ymax: bounds.getNorth(), bounds: [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()] }; approximate = true; } await mapReady; currentRaster = georaster; const count = georaster.numberOfRasters || georaster.values?.length || georaster.mins?.length || 1; populateBands(georaster, count); const b = boundsOf(georaster), crs = projectionCode(georaster); setText('rasterInfo', `${selectedFile.name} • ${georaster.width} × ${georaster.height} px • ${count} band(s) • ${crs ? `EPSG:${crs}` : 'CRS not identified'} • extent: ${b.join(', ')}`); renderLocalRaster(); uploadStatus.textContent = approximate ? 'Preview placed over current map view as an approximation; the TIFF contains no location information.' : `Rendered ${selectedFile.name} using its embedded extent. File was not uploaded.`; renderButton.hidden = true; } catch (error) { uploadStatus.textContent = error.message; setText('rasterInfo', `Could not render ${selectedFile.name}: ${error.message}`); renderButton.textContent = 'Render'; } finally { renderButton.disabled = !selectedFile; } });
 
   // Keep the map canvas aligned when the dashboard animates.
   const dashboard = byId('dashboard'), toggleBtn = byId('toggleDashboardBtn'), mapContainer = byId('map'); let dashboardHidden = false;
