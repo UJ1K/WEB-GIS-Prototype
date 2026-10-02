@@ -26,6 +26,10 @@ def map_view(request):
     return render(request, "maps/map.html", {"supabase_url": supabase_url})
 
 
+def print_layout(request):
+    return render(request, "maps/print_layout.html")
+
+
 @require_GET
 def carto_voyager_tile(request, variant, z, x, y):
     """Proxy CARTO raster tiles so its API key stays on the server."""
@@ -330,3 +334,8 @@ def feature_collection(request):
     except DatabaseError:
         return JsonResponse({"error": "PostGIS is not reachable or migrations have not been applied."}, status=503)
     return HttpResponse(data, content_type="application/geo+json")
+
+
+def export_map_image(request):
+    """Legacy endpoint retained for compatibility with older clients."""
+    return JsonResponse({"error": "Use the browser-based /print-layout/ generator."}, status=410)

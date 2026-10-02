@@ -12,17 +12,62 @@
   const map = new maplibregl.Map({
     container: 'map',
     style: basemapStyles[currentBasemap],
-    center: regions[activeRegion], zoom: 11, attributionControl: true
+    center: regions[activeRegion], zoom: 11, attributionControl: true,
+    preserveDrawingBuffer: true
   });
   let resolveMapReady;
   const mapReady = new Promise(resolve => { resolveMapReady = resolve; });
   map.once('load', () => resolveMapReady());
   const byId = id => document.getElementById(id);
+  const exportButton = byId('exportButton');
+  exportButton.addEventListener('click', async () => {
+    exportButton.disabled = true;
+    exportButton.textContent = 'Opening layout…';
+    try {
+      await mapReady;
+      await new Promise(resolve => map.once('idle', resolve));
+      sessionStorage.setItem('webgis-print-state', JSON.stringify(createPrintState()));
+      const printWindow = window.open('/print-layout/', '_blank');
+      if (!printWindow) throw new Error('The print layout was blocked. Allow pop-ups for this site and try again.');
+    } catch (error) {
+      window.alert(error.message || 'Could not prepare the print layout.');
+    } finally {
+      exportButton.disabled = false;
+      exportButton.textContent = '➤ Export as Map';
+    }
+  });
   const setText = (id, value) => { const el = byId(id); if (el) el.textContent = value; };
   const setVisibility = (id, visible) => { if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', visible ? 'visible' : 'none'); };
   const setOpacity = (id, value) => { if (map.getLayer(id)) map.setPaintProperty(id, 'raster-opacity', value); };
   const orderLayerGroups = new Map();
   function registerOrderedLayer(key, layerIds) { orderLayerGroups.set(key, layerIds.filter(id => map.getLayer(id))); refreshLayerOrderControls(); }
+  function createPrintState() {
+    const layers = [];
+    const layerRows = [...document.querySelectorAll('.layer-order-row')];
+    layerRows.forEach(row => {
+      const key = row.dataset.layerKey;
+      const ids = orderLayerGroups.get(key) || [];
+      const activeIds = ids.filter(id => map.getLayer(id) && map.getLayoutProperty(id, 'visibility') !== 'none');
+      if (!activeIds.length) return;
+      const name = row.querySelector('.layer-row-title')?.textContent?.trim() || key;
+      const color = key === 'calculated-index' ? activePalette.colors : (key.startsWith('dataset-') ? ['#52ff9a'] : ['#52ff9a']);
+      layers.push({ key, name, color, opacity: key === 'calculated-index' ? Number(resultOpacity.value) / 100 : key === 'local-input' ? Number(inputOpacity.value) / 100 : 1 });
+    });
+    const bounds = map.getBounds();
+    const rasters = [];
+    if (rasterRecord?.canvas) rasters.push({ key: 'local-input', bounds: rasterRecord.bounds, opacity: Number(inputOpacity.value) / 100, dataUrl: rasterRecord.canvas.toDataURL('image/png') });
+    if (indexRecord?.canvas) rasters.push({ key: 'calculated-index', bounds: indexRecord.bounds, opacity: Number(resultOpacity.value) / 100, dataUrl: indexRecord.canvas.toDataURL('image/png') });
+    return {
+      center: map.getCenter().toArray(), zoom: map.getZoom(), bearing: map.getBearing(), pitch: map.getPitch(),
+      basemap: currentBasemap, labels: labelsEnabled, terrain: byId('btn-terrain').getAttribute('aria-pressed') === 'true',
+      layers, drawnFeatures: drawnFeatures.filter(item => !['preview', 'measure'].includes(item.properties?.kind)),
+      datasets: [...orderLayerGroups.keys()].filter(key => key.startsWith('dataset-') && orderLayerGroups.get(key)?.some(id => map.getLayoutProperty(id, 'visibility') !== 'none')),
+      rasters,
+      bbox: [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()],
+      title: `${activeRegion.charAt(0).toUpperCase()}${activeRegion.slice(1)} Map`,
+      createdAt: new Date().toISOString()
+    };
+  }
   function orderedLayerKeys() { return [...document.querySelectorAll('.layer-order-row')].map(row => row.dataset.layerKey).filter(key => orderLayerGroups.has(key)); }
   function syncMapLayerOrder() {
     const labelBoundary = map.getStyle()?.layers?.find(layer => layer.type === 'symbol')?.id;
@@ -121,13 +166,13 @@
     ctx.putImageData(image, 0, 0); return canvas;
   }
   const stretch = (value, minimum, maximum) => Number.isFinite(Number(value)) ? Math.max(0, Math.min(255, Math.round((Number(value) - (Number.isFinite(minimum) ? minimum : 0)) * 255 / ((Number.isFinite(maximum) && maximum > (Number.isFinite(minimum) ? minimum : 0)) ? maximum - (Number.isFinite(minimum) ? minimum : 0) : 1)))) : 0;
-  function addRasterImage(raster, colorAt, opacity = 1, bandIndexes = null) {
+  function addRasterImage(raster, colorAt, opacity = 1, bandIndexes = null, maxEdge = 2048) {
     const bounds = boundsOf(raster);
     if (!bounds) throw new Error('This raster has no usable extent. Add georeferencing or CRS information before rendering.');
     const projection = projectionCode(raster);
     if (projection && projection !== 4326) throw new Error(`MapLibre image preview currently requires EPSG:4326; this file reports EPSG:${projection}. Reproject the raster to EPSG:4326 first.`);
     if (!isGeographicBounds(bounds)) throw new Error(`Invalid raster extent: xmin=${bounds[0]}, ymin=${bounds[1]}, xmax=${bounds[2]}, ymax=${bounds[3]}. MapLibre needs longitude/latitude bounds in EPSG:4326.`);
-    const canvas = rasterCanvas(raster, colorAt, 2048, bandIndexes);
+    const canvas = rasterCanvas(raster, colorAt, maxEdge, bandIndexes);
     const record = addCanvasRaster(canvas, bounds, opacity); record.canvas = canvas; return record;
   }
   // MapLibre bounds use [longitude, latitude] for each corner.
@@ -546,7 +591,7 @@
   };
   let activePalette = palettes.pal_viridis;
   function paletteColor(value) { const position = Math.max(0, Math.min(1, (value + 1) / 2)) * (activePalette.colors.length - 1), i = Math.min(activePalette.colors.length - 2, Math.floor(position)), fraction = position - i; const rgb = activePalette.colors.slice(i, i + 2).map(hex => hex.slice(1).match(/.{2}/g).map(part => parseInt(part, 16))); return [0, 1, 2].map(channel => Math.round(rgb[0][channel] * (1 - fraction) + rgb[1][channel] * fraction)).concat(255); }
-  function renderIndexPalette() { if (!currentIndexResult) return; if (indexRecord) removeImageLayer(indexRecord); indexRecord = addRasterImage(currentIndexResult, values => { const value = Number(values[0]); return Number.isFinite(value) ? paletteColor(value) : null; }, Number(resultOpacity.value) / 100, [0]); registerOrderedLayer('calculated-index', [indexRecord.layerId]); setVisibility(indexRecord.layerId, resultVisible.checked); setText('paletteStatus', `${activePalette.name} applied to the calculated index.`); }
+  function renderIndexPalette() { if (!currentIndexResult) return; if (indexRecord) removeImageLayer(indexRecord); indexRecord = addRasterImage(currentIndexResult, values => { const value = Number(values[0]); return Number.isFinite(value) ? paletteColor(value) : null; }, Number(resultOpacity.value) / 100, [0], 1024); registerOrderedLayer('calculated-index', [indexRecord.layerId]); setVisibility(indexRecord.layerId, resultVisible.checked); setText('paletteStatus', `${activePalette.name} applied to the calculated index.`); }
   document.querySelectorAll('.palette-card').forEach(button => { const palette = palettes[button.dataset.palette]; if (!palette) return; button.querySelector('.palette-swatch').style.backgroundImage = `linear-gradient(to right, ${palette.colors.join(', ')})`; button.querySelector('.palette-name').textContent = palette.name; button.querySelector('.palette-use').textContent = palette.use; button.addEventListener('click', () => { activePalette = palette; document.querySelectorAll('.palette-card').forEach(card => card.setAttribute('aria-pressed', String(card === button))); if (currentIndexResult) renderIndexPalette(); else setText('paletteStatus', `${palette.name} selected; it will apply when an index is calculated.`); }); });
   const fileInput = byId('fileInput'), dropZone = byId('dropZone'), selectedFilesLabel = byId('selectedFiles'), uploadStatus = byId('uploadStatus'), renderButton = byId('btn_layer_render');
   const replaceRasterButton = byId('replaceRasterButton');
