@@ -6,6 +6,7 @@ app_name = "maps"
 
 urlpatterns = [
     path("", views.map_view, name="map"),
+    path("tiles/carto-voyager/<str:variant>/<int:z>/<int:x>/<int:y>.png", views.carto_voyager_tile, name="carto-voyager-tile"),
     path("data-manager/", views.data_manager, name="data-manager"),
     path("api/datasets/", views.datasets_api, name="datasets-api"),
     path("api/datasets/<uuid:dataset_id>/raster-url/", views.dataset_raster_url, name="dataset-raster-url"),

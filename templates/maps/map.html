@@ -18,6 +18,7 @@
   <div id="map"></div>
   <section id="floating_layer_control" aria-label="Map layers">
     <header class="layer-panel-header" id="layerPanelDragHandle"><span aria-hidden="true">▤</span><span>Layers Management</span>
+      <button type="button" id="toggleLayerPanelBtn" class="layer-panel-toggle" aria-label="Hide Layers Management" aria-expanded="true">▼</button>
     </header>
     <div class="layer-row"><a href="/data-manager/" style="color:var(--cyan)">＋ Manage datasets</a></div>
     <div id="datasetLayers" class="layer-row layer-order-list">Loading datasets…</div>
@@ -58,8 +59,9 @@
   </div>
   <button class="mobile-menu" id="mobileMenu" aria-label="Buka pengaturan peta">☰</button>
   <div class="basemap-switch" role="group" aria-label="Basemap">
-    <button id="basemapMap" type="button" class="active" aria-pressed="true">Map</button>
-    <button id="basemapSatellite" type="button" aria-pressed="false">Satellite</button>
+    <button id="basemapMap" type="button" class="active" aria-pressed="true">Dark Theme</button>
+    <button id="basemapMap2" type="button" aria-pressed="false">Bright Theme</button>
+    <button id="basemapSatellite" type="button" aria-pressed="false">Satellite Imagery</button>
   </div>
   <div class="drawing-toolbar" role="toolbar" aria-label="Draw map features">
     <button type="button" data-draw-mode="pan" class="active" title="Pan map" aria-label="Pan map">✋</button>
@@ -79,6 +81,10 @@
     <button id="zoomOut" aria-label="Zoom Out">-</button>
     <button id="homeExtent" aria-label="Default Extent">🏠</button>
     <button id="measureTool" aria-label="Measure distance" title="Klik peta untuk mengukur jarak">📏</button>
+  </div>
+
+  <div class="export-button-container">
+    <button id="exportButton" aria-label="Export map as image">➤ Export as Map</button>
   </div>
 
   {% comment %} <div class="map-caption">Powered by Esri | Sentinel-2 10m Land Use/Land Cover data by Esri and Impact
@@ -166,9 +172,9 @@
       <div class="section-title">SPECTRAL INDEX</div>
       <div id="indexControls" class="index-controls">
         <label>Index type<select id="indexType">
-            <option value="NDVI">NDVI</option>
-            <option value="NDWI">NDWI</option>
-            <option value="NDBI">NDBI</option>
+            <option value="NDVI">NDVI (Vegetation Detection)</option>
+            <option value="NDWI">NDWI (Water Detection)</option>
+            <option value="NDBI">NDBI (Built-up Detection)</option>
           </select></label>
         <label>Threshold<input id="indexThreshold" type="number" min="-1" max="1" step="0.05" value="0"></label>
         <label>Band A<select id="indexBandA" disabled></select></label>
@@ -208,7 +214,7 @@
   <script>
     window.SUPABASE_URL = "{{ supabase_url|default:''|escapejs }}";
   </script>
-  <script src="{% static 'js/map.js' %}"></script>
+  <script src="{% static 'js/map.js' %}?v=20261002-basemap-automode"></script>
 </body>
 
 </html>

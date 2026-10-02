@@ -2,12 +2,21 @@
 (() => {
   const regions = { semarang: [110.43491, -6.95711], bangkok: [100.5018, 13.7563], jakarta: [106.8456, -6.2088], chiangmai: [98.9853, 18.7883], kalimantan: [116, -.5], yogyakarta: [110.36, -7.782] };
   let activeRegion = 'semarang';
+  let currentBasemap = 'dark';
+  let labelsEnabled = true;
+  let mapLayersInitialized = false;
+  const darkStyleLayerIds = new Set();
+  const basemapStyles = {
+    dark: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json'
+  };
   const map = new maplibregl.Map({
     container: 'map',
-    style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+    style: basemapStyles[currentBasemap],
     center: regions[activeRegion], zoom: 11, attributionControl: true
   });
-  const mapReady = new Promise(resolve => map.once('load', resolve));
+  let resolveMapReady;
+  const mapReady = new Promise(resolve => { resolveMapReady = resolve; });
+  map.once('load', () => resolveMapReady());
   const byId = id => document.getElementById(id);
   const setText = (id, value) => { const el = byId(id); if (el) el.textContent = value; };
   const setVisibility = (id, visible) => { if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', visible ? 'visible' : 'none'); };
@@ -129,16 +138,100 @@
   byId('homeExtent').onclick = () => map.flyTo({ center: regions[activeRegion], zoom: 11 });
   byId('regionSelect').onchange = e => { activeRegion = e.target.value; map.flyTo({ center: regions[activeRegion], zoom: 11 }); };
   byId('btn-terrain').onclick = e => { const on = e.currentTarget.getAttribute('aria-pressed') !== 'true'; e.currentTarget.setAttribute('aria-pressed', String(on)); e.currentTarget.classList.toggle('active', on); e.currentTarget.innerHTML = on ? '☑ Terrain' : '☐ Terrain'; byId('map').style.filter = on ? 'saturate(1.2) contrast(1.1)' : 'none'; };
-  const btnLabels = byId('btn-labels'); let labelsEnabled = true, currentBasemap = 'map';
+  const btnLabels = byId('btn-labels');
   function setMapLabelsVisible(visible) {
     map.getStyle()?.layers?.filter(layer => layer.type === 'symbol').forEach(layer => {
-      if (map.getLayer(layer.id)) map.setLayoutProperty(layer.id, 'visibility', visible ? 'visible' : 'none');
+      if (map.getLayer(layer.id)) {
+        const isDarkStyleLayer = darkStyleLayerIds.has(layer.id);
+        const shouldShow = visible && (!isDarkStyleLayer || currentBasemap === 'dark');
+        map.setLayoutProperty(layer.id, 'visibility', shouldShow ? 'visible' : 'none');
+      }
     });
+    setBasemapVisibility(currentBasemap);
   }
-  function selectBasemap(mode) { currentBasemap = mode; const sat = mode === 'satellite'; setVisibility('topo-layer', !sat); setVisibility('satellite-layer', sat); setMapLabelsVisible(labelsEnabled); btnLabels.classList.toggle('active', labelsEnabled); btnLabels.innerHTML = labelsEnabled ? '☑ Map Labels' : '☐ Map Labels'; byId('basemapMap').classList.toggle('active', !sat); byId('basemapSatellite').classList.toggle('active', sat); byId('basemapMap').setAttribute('aria-pressed', String(!sat)); byId('basemapSatellite').setAttribute('aria-pressed', String(sat)); }
+  function styleBasemapLabels(mode) {
+    // CARTO's styles ship with contrasting label colors already configured.
+  }
+  function applyBasemapMode(mode) {
+    if (!map.isStyleLoaded()) return false;
+    if (!map.getSource('voyager')) addVoyagerLayer();
+    if (!map.getSource('satellite')) addSatelliteLayer();
+    setBasemapVisibility(mode);
+    const firstAppLayer = ['drawn-polygons', 'layer_survey_points'].find(id => map.getLayer(id));
+    if (firstAppLayer) {
+      if (map.getLayer('voyager-layer')) map.moveLayer('voyager-layer', firstAppLayer);
+      if (map.getLayer('satellite-layer')) map.moveLayer('satellite-layer', firstAppLayer);
+    }
+    styleBasemapLabels(mode);
+    map.getStyle()?.layers?.filter(layer => layer.type === 'symbol').forEach(layer => {
+      if (map.getLayer(layer.id)) {
+        const show = labelsEnabled && (!darkStyleLayerIds.has(layer.id) || mode === 'dark');
+        map.setLayoutProperty(layer.id, 'visibility', show ? 'visible' : 'none');
+      }
+    });
+    return true;
+  }
+  function setBasemapVisibility(mode) {
+    // Reset every basemap first, then enable only the selected base and its
+    // label variant. App data layers are intentionally outside this group.
+    darkStyleLayerIds.forEach(id => setVisibility(id, false));
+    ['voyager-layer', 'voyager-nolabels-layer', 'satellite-layer'].forEach(id => setVisibility(id, false));
+    if (mode === 'dark') {
+      darkStyleLayerIds.forEach(id => {
+        const layer = map.getLayer(id);
+        const show = layer && (layer.type !== 'symbol' || labelsEnabled);
+        if (layer) map.setLayoutProperty(id, 'visibility', show ? 'visible' : 'none');
+      });
+    } else if (mode === 'bright') {
+      setVisibility(labelsEnabled ? 'voyager-layer' : 'voyager-nolabels-layer', true);
+    } else if (mode === 'satellite') {
+      setVisibility('satellite-layer', true);
+    }
+  }
+  function selectBasemap(mode) {
+    currentBasemap = mode;
+    const dark = mode === 'dark', bright = mode === 'bright', satellite = mode === 'satellite';
+    btnLabels.classList.toggle('active', labelsEnabled); btnLabels.innerHTML = labelsEnabled ? '☑ Map Labels' : '☐ Map Labels';
+    [['basemapMap', dark], ['basemapMap2', bright], ['basemapSatellite', satellite]].forEach(([id, active]) => {
+      byId(id).classList.toggle('active', active); byId(id).setAttribute('aria-pressed', String(active));
+    });
+    if (!applyBasemapMode(mode)) mapReady.then(() => applyBasemapMode(currentBasemap));
+  }
   btnLabels.onclick = () => { labelsEnabled = !labelsEnabled; setMapLabelsVisible(labelsEnabled); btnLabels.classList.toggle('active', labelsEnabled); btnLabels.innerHTML = labelsEnabled ? '☑ Map Labels' : '☐ Map Labels'; };
-  byId('basemapMap').onclick = () => selectBasemap('map'); byId('basemapSatellite').onclick = () => selectBasemap('satellite');
+  byId('basemapMap').onclick = () => selectBasemap('dark'); byId('basemapMap2').onclick = () => selectBasemap('bright'); byId('basemapSatellite').onclick = () => selectBasemap('satellite');
   byId('mobileMenu').onclick = () => document.querySelector('.top-right-widget').classList.toggle('mobile-open');
+  const layerPanel = byId('floating_layer_control'), layerPanelToggle = byId('toggleLayerPanelBtn');
+  layerPanelToggle.onclick = () => {
+    const collapsed = layerPanel.classList.toggle('layer-panel-collapsed');
+    layerPanelToggle.setAttribute('aria-expanded', String(!collapsed));
+    layerPanelToggle.setAttribute('aria-label', `${collapsed ? 'Show' : 'Hide'} Layers Management`);
+    layerPanelToggle.textContent = collapsed ? '▲' : '▼';
+  };
+  const layerPanelHandle = byId('layerPanelDragHandle');
+  let panelDrag = null;
+  layerPanelHandle.addEventListener('pointerdown', event => {
+    if (event.target.closest('button, a, input, select')) return;
+    const rect = layerPanel.getBoundingClientRect();
+    panelDrag = { pointerId: event.pointerId, offsetX: event.clientX - rect.left, offsetY: event.clientY - rect.top };
+    layerPanelHandle.setPointerCapture(event.pointerId);
+    layerPanel.classList.add('layer-panel-dragging');
+    event.preventDefault();
+  });
+  layerPanelHandle.addEventListener('pointermove', event => {
+    if (!panelDrag || panelDrag.pointerId !== event.pointerId) return;
+    const left = Math.max(0, Math.min(window.innerWidth - layerPanel.offsetWidth, event.clientX - panelDrag.offsetX));
+    const top = Math.max(0, Math.min(window.innerHeight - layerPanel.offsetHeight, event.clientY - panelDrag.offsetY));
+    layerPanel.style.left = `${left}px`;
+    layerPanel.style.top = `${top}px`;
+    layerPanel.style.right = 'auto';
+  });
+  const stopPanelDrag = event => {
+    if (!panelDrag || panelDrag.pointerId !== event.pointerId) return;
+    panelDrag = null;
+    layerPanel.classList.remove('layer-panel-dragging');
+  };
+  layerPanelHandle.addEventListener('pointerup', stopPanelDrag);
+  layerPanelHandle.addEventListener('pointercancel', stopPanelDrag);
 
   // Drawing, measurement, and GeoJSON/vector layer sources.
   let drawMode = 'pan', pending = [], measurePoints = [], measureFeature = null, drawnFeatures = [];
@@ -344,20 +437,30 @@
 
   // Layer initialization obeying Z-index hierarchy:
   // Area/Raster (z=200) < Line (z=300) < Point (z=400)
-  map.on('load', () => {
-    // OpenFreeMap supplies vector labels; imagery/topographic tiles sit below
-    // its symbol layers so labels remain readable on either basemap.
-    map.addSource('topo', { type: 'raster', tiles: ['https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json'], tileSize: 256, attribution: 'Tiles © Esri — Source: Esri, Maxar, Earthstar Geographics' });
+  function addSatelliteLayer() {
+    if (map.getSource('satellite')) return;
     map.addSource('satellite', { type: 'raster', tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'], tileSize: 256, attribution: 'Tiles © Esri, Maxar, Earthstar Geographics' });
-    const firstSymbolLayer = map.getStyle().layers.find(layer => layer.type === 'symbol')?.id;
-    map.addLayer({ id: 'topo-layer', type: 'raster', source: 'topo' }, firstSymbolLayer);
-    map.addLayer({ id: 'satellite-layer', type: 'raster', source: 'satellite', layout: { visibility: 'none' } }, firstSymbolLayer);
-    const countryLabels = map.getLayer('label_country');
-    if (countryLabels) map.setLayoutProperty('label_country', 'text-field', [
-      'format', ['get', 'name_en'], { 'font-scale': 1.2 }, '\n', {}, ['get', 'name'],
-      { 'font-scale': 0.8, 'text-font': ['literal', ['Noto Sans Regular']] }
-    ]);
-    setMapLabelsVisible(labelsEnabled);
+    map.addLayer({ id: 'satellite-layer', type: 'raster', source: 'satellite', layout: { visibility: 'none' } });
+    const firstAppLayer = ['drawn-polygons', 'layer_survey_points'].find(id => map.getLayer(id));
+    if (firstAppLayer) map.moveLayer('satellite-layer', firstAppLayer);
+  }
+
+  function addVoyagerLayer() {
+    if (map.getSource('voyager')) return;
+    map.addSource('voyager', { type: 'raster', tiles: ['/tiles/carto-voyager/voyager/{z}/{x}/{y}.png'], tileSize: 256, attribution: '© OpenStreetMap contributors © CARTO' });
+    map.addSource('voyager-nolabels', { type: 'raster', tiles: ['/tiles/carto-voyager/voyager_nolabels/{z}/{x}/{y}.png'], tileSize: 256, attribution: '© OpenStreetMap contributors © CARTO' });
+    map.addLayer({ id: 'voyager-layer', type: 'raster', source: 'voyager', layout: { visibility: 'none' } });
+    map.addLayer({ id: 'voyager-nolabels-layer', type: 'raster', source: 'voyager-nolabels', layout: { visibility: 'none' } });
+    const firstAppLayer = ['drawn-polygons', 'layer_survey_points'].find(id => map.getLayer(id));
+    if (firstAppLayer) {
+      map.moveLayer('voyager-layer', firstAppLayer);
+      map.moveLayer('voyager-nolabels-layer', firstAppLayer);
+    }
+  }
+
+  function addApplicationLayers() {
+    if (map.getSource('drawn-data')) return;
+    mapLayersInitialized = true;
 
     // 1. Vector Drawn Layers
     map.addSource('drawn-data', { type: 'geojson', data: emptyFC() });
@@ -389,6 +492,13 @@
 
     enforceLayerHierarchy();
     loadDatasets();
+  }
+
+  map.on('load', () => {
+    map.getStyle().layers.forEach(layer => darkStyleLayerIds.add(layer.id));
+    addSatelliteLayer();
+    addApplicationLayers();
+    setMapLabelsVisible(labelsEnabled);
   });
 
   // Stored datasets: GeoJSON vectors and signed-URL GeoTIFFs.

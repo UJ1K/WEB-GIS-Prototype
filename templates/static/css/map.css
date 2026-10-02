@@ -573,13 +573,48 @@ button {
 
 .basemap-switch {
   position: absolute;
-  z-index: 820;
+  z-index: 1200;
   top: 15px;
   right: 15px;
   display: flex;
   background: rgba(5, 18, 25, .92);
   border: 1px solid var(--line)
 }
+/* Matched exactly to the .top-left-widget style */
+.export-button-container {
+  position: absolute;
+  z-index: 780;
+  top: 18px;
+  left: 280px;
+  display: flex;
+  background: rgba(5, 18, 25, 0.88); /* Matched opacity */
+  border: 1px solid var(--line);
+  padding: 6px 9px; /* Matched padding */
+  color: var(--cyan);
+  text-shadow: 0 0 8px rgba(82, 255, 154, 0.4);
+  align-items: center;
+  font-size: 12px;
+  font-weight: 500;
+  /* border-radius: 4px; REMOVED to match sharp corners */
+}
+
+/* Removes the grey background/border from the actual button element */
+.export-button-container button {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: inherit;
+  text-shadow: inherit;
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
+  font-size: inherit;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.basemap-switch, .basemap-switch button { pointer-events: auto }
 
 .basemap-switch button,
 .drawing-toolbar button {
@@ -1033,7 +1068,38 @@ button {
   font-weight: 700;
   cursor: move;
   user-select: none;
+  touch-action: none;
 }
+
+#floating_layer_control.layer-panel-dragging { user-select: none; }
+#floating_layer_control.layer-panel-dragging .layer-panel-header { cursor: grabbing; }
+
+#floating_layer_control.layer-panel-collapsed {
+  max-height: none;
+  overflow: hidden;
+}
+
+#floating_layer_control.layer-panel-collapsed > :not(.layer-panel-header) {
+  display: none;
+}
+
+.layer-panel-toggle {
+  display: grid;
+  place-items: center;
+  flex: 0 0 26px;
+  width: 26px;
+  height: 24px;
+  margin-left: auto;
+  border: 1px solid #24434e;
+  border-radius: 4px;
+  background: #0a202a;
+  color: var(--cyan);
+  font-size: 11px;
+  line-height: 1;
+}
+
+.layer-panel-toggle:hover { background: #0d3437; }
+.layer-panel-toggle:focus-visible { outline: 2px solid #58d9c7; outline-offset: 2px; }
 
 .layer-row,
 .input-layer-row,

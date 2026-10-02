@@ -26,6 +26,36 @@ def map_view(request):
     return render(request, "maps/map.html", {"supabase_url": supabase_url})
 
 
+@require_GET
+def carto_voyager_tile(request, variant, z, x, y):
+    """Proxy CARTO raster tiles so its API key stays on the server."""
+    if variant not in {"voyager", "voyager_nolabels"}:
+        return HttpResponse(status=404)
+    api_key = os.getenv("CARTO_API_KEY", "").strip()
+    if not api_key:
+        return JsonResponse({"error": "CARTO_API_KEY is not configured on the server."}, status=503)
+    if z > 22 or x >= 2 ** z or y >= 2 ** z:
+        return HttpResponse(status=404)
+
+    tile_url = f"https://basemaps.cartocdn.com/rastertiles/{variant}/{z}/{x}/{y}.png"
+    request_obj = Request(f"{tile_url}?key={api_key}", headers={"User-Agent": "ProjectWEBGIS/1.0"})
+    try:
+        with urlopen(request_obj, timeout=15) as response:
+            tile = response.read(2_000_001)
+            if len(tile) > 2_000_000:
+                return JsonResponse({"error": "The basemap tile response was too large."}, status=502)
+            content_type = response.headers.get("Content-Type", "image/png")
+            if not content_type.startswith("image/"):
+                return JsonResponse({"error": "CARTO returned an invalid tile response."}, status=502)
+            result = HttpResponse(tile, content_type=content_type)
+            result["Cache-Control"] = "public, max-age=86400"
+            return result
+    except HTTPError as exc:
+        return JsonResponse({"error": "CARTO rejected the basemap tile request."}, status=502)
+    except (TimeoutError, URLError, OSError):
+        return JsonResponse({"error": "Could not reach CARTO to load the basemap tile."}, status=502)
+
+
 @login_required(login_url="/admin/login/")
 def data_manager(request):
     return render(request, "maps/data_manager.html")
