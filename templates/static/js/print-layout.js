@@ -6,6 +6,8 @@
   })();
   const $ = id => document.getElementById(id);
   const status = $('layoutStatus');
+  let resolveLayersReady;
+  const layersReady = new Promise(resolve => { resolveLayersReady = resolve; });
   if (!state?.center || !Number.isFinite(state.zoom)) {
     status.textContent = 'Map state was not found. Return to the map and choose Export as Map.';
     $('printButton').disabled = true;
@@ -18,8 +20,9 @@
   const map = new maplibregl.Map({
     container: 'printMap', style: basemapStyle, center: state.center, zoom: state.zoom,
     bearing: state.bearing || 0, pitch: state.pitch || 0, attributionControl: true,
-    preserveDrawingBuffer: true
+    preserveDrawingBuffer: true, interactive: false, renderWorldCopies: false
   });
+  ['scrollZoom', 'dragPan', 'dragRotate', 'doubleClickZoom', 'keyboard', 'touchZoomRotate', 'touchPitch'].forEach(control => map[control]?.disable());
   function setBasemapVisibility(mode) {
     if (mode === 'dark') return;
     map.getStyle().layers.filter(layer => layer.type !== 'background').forEach(layer => {
@@ -39,7 +42,6 @@
   authorInput.addEventListener('input', () => { $('layoutAuthor').textContent = authorInput.value.trim() || '—'; });
   $('layoutDate').textContent = new Intl.DateTimeFormat(undefined, { dateStyle: 'long' }).format(new Date(state.createdAt || Date.now()));
   $('centerText').textContent = `Center: ${state.center[1].toFixed(5)}° N, ${state.center[0].toFixed(5)}° E`;
-    updateScaleText();
   $('extentText').textContent = `Extent: ${state.bbox.map(value => value.toFixed(3)).join(', ')}`;
   $('northArrow').style.transform = `rotate(${-Number(state.bearing || 0)}deg)`;
   $('attributionText').textContent = state.basemap === 'dark' ? 'Basemap © CARTO · © OpenStreetMap contributors' : (state.basemap === 'satellite' ? 'Imagery © Esri, Maxar, Earthstar Geographics' : 'Map data © OpenStreetMap contributors · © CARTO');
@@ -54,22 +56,30 @@
   });
   if (!state.layers?.length) $('legendItems').textContent = 'No active data layers';
 
+  const gridToggle = $('gridToggle');
   function addGrid() {
     if (!map.isStyleLoaded()) return;
     const bounds = map.getBounds(), west = bounds.getWest(), east = bounds.getEast(), south = bounds.getSouth(), north = bounds.getNorth();
-    const step = Math.max(.01, Math.pow(10, Math.floor(Math.log10(Math.max(east - west, north - south) / 5))));
+    const rawStep = Math.max(.01, Math.max(east - west, north - south) / 5);
+    const exponent = Math.floor(Math.log10(rawStep));
+    const magnitude = 10 ** exponent;
+    const step = [1, 2, 5, 10].map(value => value * magnitude).find(value => value >= rawStep) || 10 * magnitude;
     const features = [];
     for (let lon = Math.ceil(west / step) * step; lon <= east; lon += step) features.push({ type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: [[lon, south], [lon, north]] } });
     for (let lat = Math.ceil(south / step) * step; lat <= north; lat += step) features.push({ type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: [[west, lat], [east, lat]] } });
     if (map.getLayer('print-grid-lines')) map.removeLayer('print-grid-lines');
     if (map.getSource('print-grid')) map.removeSource('print-grid');
     map.addSource('print-grid', { type: 'geojson', data: { type: 'FeatureCollection', features } });
-    map.addLayer({ id: 'print-grid-lines', type: 'line', source: 'print-grid', layout: { visibility: gridToggle.checked ? 'visible' : 'none' }, paint: { 'line-color': '#233c45', 'line-width': 1, 'line-opacity': .28, 'line-dasharray': [2, 2] } });
+    map.addLayer({ id: 'print-grid-lines', type: 'line', source: 'print-grid', layout: { visibility: gridToggle.checked ? 'visible' : 'none' }, paint: { 'line-color': '#233c45', 'line-width': .5, 'line-opacity': .25, 'line-dasharray': [2, 4] } });
     const mid = (west + east) / 2;
     $('gridTop').textContent = `Longitude ${mid.toFixed(3)}° · grid ${step.toPrecision(1)}°`;
     $('gridBottom').textContent = `Latitude ${((south + north) / 2).toFixed(3)}°`;
   }
-  const gridToggle = $('gridToggle');
+  let gridTimeout;
+  function scheduleGridUpdate() {
+    window.clearTimeout(gridTimeout);
+    gridTimeout = window.setTimeout(addGrid, 300);
+  }
   function updateScaleText() {
     const latitude = map.getCenter().lat;
     const metersPerPixel = 156543.03392 * Math.cos(latitude * Math.PI / 180) / (2 ** map.getZoom());
@@ -132,7 +142,7 @@
       inset.addLayer({ id: 'print-extent-line', type: 'line', source: 'print-extent', paint: { 'line-color': '#d5392d', 'line-width': 2 } });
     };
     updateExtent();
-    map.on('moveend', () => { addGrid(); updateExtent(); $('centerText').textContent = `Center: ${map.getCenter().lat.toFixed(5)}° N, ${map.getCenter().lng.toFixed(5)}° E`; updateScaleText(); $('extentText').textContent = `Extent: ${[map.getBounds().getWest(), map.getBounds().getSouth(), map.getBounds().getEast(), map.getBounds().getNorth()].map(value => value.toFixed(3)).join(', ')}`; });
+    map.on('moveend', () => { scheduleGridUpdate(); updateExtent(); $('centerText').textContent = `Center: ${map.getCenter().lat.toFixed(5)}° N, ${map.getCenter().lng.toFixed(5)}° E`; updateScaleText(); $('extentText').textContent = `Extent: ${[map.getBounds().getWest(), map.getBounds().getSouth(), map.getBounds().getEast(), map.getBounds().getNorth()].map(value => value.toFixed(3)).join(', ')}`; });
     map.on('rotate', () => { $('northArrow').style.transform = `rotate(${-map.getBearing()}deg)`; });
     status.textContent = '';
   }
@@ -145,37 +155,103 @@
     $('landscapeButton').setAttribute('aria-pressed', String(landscape));
     document.documentElement.style.setProperty('--print-orientation', landscape ? 'landscape' : 'portrait');
     map.resize(); inset.resize();
+    if (map.loaded() && Array.isArray(state.bbox) && state.bbox.length === 4) {
+      map.fitBounds([[state.bbox[0], state.bbox[1]], [state.bbox[2], state.bbox[3]]], { padding: 0, animate: false });
+    }
     updateScaleText();
   }
   $('portraitButton').addEventListener('click', () => setOrientation('portrait'));
   $('landscapeButton').addEventListener('click', () => setOrientation('landscape'));
-  $('printButton').addEventListener('click', async () => {
-    status.textContent = 'Preparing print…';
-    await new Promise(resolve => map.once('idle', resolve));
-    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-    status.textContent = '';
-    window.print();
-  });
-  window.addEventListener('beforeprint', () => {
-    map.resize(); inset.resize();
-    map.once('idle', () => {
-      try {
-        const image = map.getCanvas().toDataURL('image/png');
-        if (!$('printSnapshot')) {
-          const snapshot = document.createElement('img'); snapshot.id = 'printSnapshot'; snapshot.alt = 'Map snapshot for printing';
-          Object.assign(snapshot.style, { position: 'absolute', inset: '0', width: '100%', height: '100%', zIndex: '2', objectFit: 'fill' });
-          $('printMap').append(snapshot);
-        }
-        $('printSnapshot').src = image;
-        document.getElementById('printMap').style.visibility = 'hidden';
-      } catch (error) { status.textContent = 'Map image could not be prepared for printing; remove a remote layer or use its provider-supported print option.'; }
+  async function waitForMapIdle() {
+    if (map.loaded() && map.areTilesLoaded()) return;
+    await new Promise((resolve, reject) => {
+      const timeout = window.setTimeout(() => { map.off('idle', onIdle); reject(new Error('The map is still loading. Wait a moment, then try printing again.')); }, 15000);
+      const onIdle = () => { window.clearTimeout(timeout); resolve(); };
+      map.once('idle', onIdle);
     });
+  }
+  async function capturePrintSnapshot() {
+    status.textContent = 'Preparing map image…';
+    await layersReady;
+    map.resize();
+    await waitForMapIdle();
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    const canvas = map.getCanvas();
+    const dataUrl = canvas.toDataURL('image/png');
+    let snapshot = $('printSnapshot');
+    if (!snapshot) {
+      snapshot = document.createElement('img');
+      snapshot.id = 'printSnapshot';
+      snapshot.alt = 'Map image for printing';
+      $('printMap').append(snapshot);
+    }
+    snapshot.src = dataUrl;
+    await snapshot.decode();
+    canvas.style.visibility = 'hidden';
+  }
+  async function renderPaperCanvas() {
+    if (!window.html2canvas) throw new Error('The layout export library did not load. Check your connection and reload.');
+    await capturePrintSnapshot();
+    return window.html2canvas($('paper'), { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false });
+  }
+  async function downloadPaperImage(format) {
+    const button = $(`export${format.toUpperCase()}Button`);
+    button.disabled = true;
+    try {
+      const canvas = await renderPaperCanvas();
+      const mime = format === 'jpg' ? 'image/jpeg' : 'image/png';
+      const link = document.createElement('a');
+      link.href = canvas.toDataURL(mime, format === 'jpg' ? .94 : undefined);
+      link.download = `webgis-map-layout-${new Date().toISOString().slice(0, 10)}.${format}`;
+      link.click();
+      status.textContent = '';
+    } catch (error) {
+      status.textContent = `Image export failed: ${error.message || 'the map canvas could not be read.'}`;
+    } finally {
+      map.getCanvas().style.visibility = '';
+      if ($('printSnapshot')) $('printSnapshot').remove();
+      button.disabled = false;
+      map.resize();
+    }
+  }
+  async function downloadPaperPdf() {
+    const button = $('printButton'); button.disabled = true;
+    try {
+      if (!window.jspdf?.jsPDF) throw new Error('The PDF export library did not load. Check your connection and reload.');
+      const canvas = await renderPaperCanvas();
+      const landscape = $('paper').classList.contains('a4-landscape');
+      const pdf = new window.jspdf.jsPDF({ orientation: landscape ? 'landscape' : 'portrait', unit: 'mm', format: 'a4', compress: true });
+      pdf.addImage(canvas.toDataURL('image/jpeg', .94), 'JPEG', 0, 0, landscape ? 297 : 210, landscape ? 210 : 297, undefined, 'FAST');
+      pdf.save(`webgis-map-layout-${new Date().toISOString().slice(0, 10)}.pdf`);
+      status.textContent = '';
+    } catch (error) {
+      status.textContent = `PDF export failed: ${error.message || 'could not render the page.'}`;
+    } finally {
+      map.getCanvas().style.visibility = '';
+      if ($('printSnapshot')) $('printSnapshot').remove();
+      button.disabled = false;
+      map.resize();
+    }
+  }
+  $('printButton').addEventListener('click', downloadPaperPdf);
+  $('exportPNGButton').addEventListener('click', () => downloadPaperImage('png'));
+  $('exportJPGButton').addEventListener('click', () => downloadPaperImage('jpg'));
+  $('nativePrintButton').addEventListener('click', async event => {
+    const button = event.currentTarget; button.disabled = true;
+    try { await capturePrintSnapshot(); window.print(); }
+    catch (error) { status.textContent = error.message || 'Could not prepare the map for printing.'; }
+    finally { button.disabled = false; }
   });
-  window.addEventListener('afterprint', () => { $('printMap').style.visibility = ''; if ($('printSnapshot')) $('printSnapshot').remove(); map.resize(); inset.resize(); });
+  window.addEventListener('beforeprint', () => { map.resize(); inset.resize(); });
+  window.addEventListener('afterprint', () => { map.getCanvas().style.visibility = ''; if ($('printSnapshot')) $('printSnapshot').remove(); map.resize(); inset.resize(); });
   map.once('load', () => {
     if (state.labels === false) map.getStyle().layers.filter(layer => layer.type === 'symbol').forEach(layer => map.setLayoutProperty(layer.id, 'visibility', 'none'));
     map.setFilter('road-label', ['!=', ['get', 'class'], 'path']);
-    restoreLayers().then(() => map.resize()).catch(error => { status.textContent = error.message || 'Some map layers could not be restored.'; });
+    map.resize();
+    if (Array.isArray(state.bbox) && state.bbox.length === 4) {
+      map.fitBounds([[state.bbox[0], state.bbox[1]], [state.bbox[2], state.bbox[3]]], { padding: 0, animate: false });
+    }
+    restoreLayers().then(() => { map.resize(); if (Array.isArray(state.bbox) && state.bbox.length === 4) map.fitBounds([[state.bbox[0], state.bbox[1]], [state.bbox[2], state.bbox[3]]], { padding: 0, animate: false }); resolveLayersReady(); }).catch(error => { status.textContent = error.message || 'Some map layers could not be restored.'; resolveLayersReady(); });
   });
   setOrientation('portrait');
 })();

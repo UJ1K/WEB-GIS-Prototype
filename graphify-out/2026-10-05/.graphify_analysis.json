@@ -1,0 +1,320 @@
+{
+  "communities": {
+    "0": [
+      "django_contrib_auth_decorators",
+      "django_contrib_gis_geos",
+      "django_contrib_gis_serializers_geojson",
+      "django_http",
+      "django_shortcuts",
+      "django_views_decorators_http",
+      "json",
+      "login_required",
+      "maps_models_geodataset",
+      "maps_models_geodataset_str",
+      "maps_views",
+      "maps_views_analyze_water",
+      "maps_views_carto_voyager_tile",
+      "maps_views_data_manager",
+      "maps_views_dataset_json",
+      "maps_views_dataset_raster_url",
+      "maps_views_datasets_api",
+      "maps_views_export_map_image",
+      "maps_views_feature_collection",
+      "maps_views_print_layout",
+      "maps_views_rationale_248",
+      "maps_views_rationale_340",
+      "maps_views_rationale_35",
+      "maps_views_read_vector_features",
+      "maps_views_save_dataset",
+      "maps_views_save_raster",
+      "maps_views_signed_raster_url",
+      "require_get",
+      "require_post",
+      "tempfile",
+      "urllib_error",
+      "urllib_request",
+      "zipfile"
+    ],
+    "1": [
+      "django_core_asgi",
+      "django_core_exceptions",
+      "django_core_wsgi",
+      "manage",
+      "manage_main",
+      "manage_rationale_2",
+      "manage_rationale_8",
+      "maps_views_map_view",
+      "os",
+      "pathlib",
+      "sys",
+      "urllib_parse",
+      "webgis_asgi",
+      "webgis_asgi_rationale_1",
+      "webgis_settings",
+      "webgis_settings_rationale_1",
+      "webgis_wsgi",
+      "webgis_wsgi_rationale_1"
+    ],
+    "2": [
+      "templates_static_js_map",
+      "templates_static_js_map_addsatellitelayer",
+      "templates_static_js_map_addvoyagerlayer",
+      "templates_static_js_map_applybasemapmode",
+      "templates_static_js_map_createprintstate",
+      "templates_static_js_map_feature",
+      "templates_static_js_map_finishlinepolygon",
+      "templates_static_js_map_haversine",
+      "templates_static_js_map_polygonarea",
+      "templates_static_js_map_selectbasemap",
+      "templates_static_js_map_setbasemapvisibility",
+      "templates_static_js_map_setdrawmode",
+      "templates_static_js_map_setmaplabelsvisible",
+      "templates_static_js_map_showdrawn",
+      "templates_static_js_map_stylebasemaplabels",
+      "templates_static_js_map_updatedrawn"
+    ],
+    "3": [
+      "django_contrib",
+      "django_contrib_gis_admin",
+      "django_contrib_gis_db",
+      "gismodeladmin",
+      "maps_admin",
+      "maps_admin_mapfeatureadmin",
+      "maps_models",
+      "maps_models_mapfeature",
+      "maps_models_mapfeature_str",
+      "maps_models_meta",
+      "maps_models_rationale_26",
+      "register"
+    ],
+    "4": [
+      "django_contrib_gis_db_models_fields",
+      "django_db",
+      "django_db_models_deletion",
+      "maps_migrations_0001_initial",
+      "maps_migrations_0001_initial_migration",
+      "maps_migrations_0002_geodataset_mapfeature_dataset",
+      "maps_migrations_0002_geodataset_mapfeature_dataset_migration",
+      "uuid"
+    ],
+    "5": [
+      "templates_static_js_print_layout",
+      "templates_static_js_print_layout_addgrid",
+      "templates_static_js_print_layout_captureprintsnapshot",
+      "templates_static_js_print_layout_restorelayers",
+      "templates_static_js_print_layout_setbasemapvisibility",
+      "templates_static_js_print_layout_setorientation",
+      "templates_static_js_print_layout_updatescaletext",
+      "templates_static_js_print_layout_waitformapidle"
+    ],
+    "6": [
+      "django_conf",
+      "django_conf_urls_static",
+      "django_urls",
+      "maps_init",
+      "maps_urls",
+      "webgis_urls",
+      "webgis_urls_rationale_1"
+    ],
+    "7": [
+      "templates_static_js_map_createstoredrasterrow",
+      "templates_static_js_map_loaddatasets",
+      "templates_static_js_map_movelayergroup",
+      "templates_static_js_map_orderedlayerkeys",
+      "templates_static_js_map_refreshlayerordercontrols",
+      "templates_static_js_map_registerorderedlayer",
+      "templates_static_js_map_syncmaplayerorder"
+    ],
+    "8": [
+      "templates_static_js_map_addrasterimage",
+      "templates_static_js_map_isgeographicbounds",
+      "templates_static_js_map_palettecolor",
+      "templates_static_js_map_rastercanvas",
+      "templates_static_js_map_renderindexpalette",
+      "templates_static_js_map_samplerasterat"
+    ],
+    "9": [
+      "templates_static_js_map_populatebands",
+      "templates_static_js_map_removeimagelayer",
+      "templates_static_js_map_renderlocalraster",
+      "templates_static_js_map_setdashboardmode",
+      "templates_static_js_map_setfile",
+      "templates_static_js_map_setindexdefaults"
+    ],
+    "10": [
+      "appconfig",
+      "django_apps",
+      "maps_apps",
+      "maps_apps_mapsconfig"
+    ],
+    "11": [
+      "templates_static_js_map_addapplicationlayers",
+      "templates_static_js_map_addcanvasraster",
+      "templates_static_js_map_enforcelayerhierarchy",
+      "templates_static_js_map_opensurveypopup"
+    ],
+    "12": [
+      "django_test",
+      "maps_tests"
+    ],
+    "13": [
+      "maps_migrations_init"
+    ],
+    "14": [
+      "webgis_init"
+    ]
+  },
+  "cohesion": {
+    "0": 0.0946969696969697,
+    "1": 0.1111111111111111,
+    "2": 0.21666666666666667,
+    "3": 0.18181818181818182,
+    "4": 0.25,
+    "5": 0.42857142857142855,
+    "6": 0.2857142857142857,
+    "7": 0.47619047619047616,
+    "8": 0.3333333333333333,
+    "9": 0.3333333333333333,
+    "10": 0.5,
+    "11": 0.5,
+    "12": 1.0,
+    "13": 1.0,
+    "14": 1.0
+  },
+  "gods": [
+    {
+      "id": "maps_models_geodataset",
+      "label": "GeoDataset",
+      "degree": 9
+    },
+    {
+      "id": "maps_models_mapfeature",
+      "label": "MapFeature",
+      "degree": 8
+    },
+    {
+      "id": "templates_static_js_map_loaddatasets",
+      "label": "loadDatasets()",
+      "degree": 7
+    },
+    {
+      "id": "templates_static_js_map_addrasterimage",
+      "label": "addRasterImage()",
+      "degree": 7
+    },
+    {
+      "id": "maps_views_save_dataset",
+      "label": "_save_dataset()",
+      "degree": 6
+    },
+    {
+      "id": "templates_static_js_map_applybasemapmode",
+      "label": "applyBasemapMode()",
+      "degree": 6
+    },
+    {
+      "id": "templates_static_js_map_showdrawn",
+      "label": "showDrawn()",
+      "degree": 6
+    },
+    {
+      "id": "templates_static_js_map_registerorderedlayer",
+      "label": "registerOrderedLayer()",
+      "degree": 6
+    },
+    {
+      "id": "maps_views_datasets_api",
+      "label": "datasets_api()",
+      "degree": 5
+    },
+    {
+      "id": "maps_views_read_vector_features",
+      "label": "_read_vector_features()",
+      "degree": 5
+    }
+  ],
+  "surprises": [
+    {
+      "source": "feature_collection()",
+      "target": "MapFeature",
+      "source_files": [
+        "maps/views.py",
+        "maps/models.py"
+      ],
+      "confidence": "INFERRED",
+      "relation": "uses",
+      "why": "inferred connection - not explicitly stated in source; bridges separate communities; peripheral node `feature_collection()` unexpectedly reaches hub `MapFeature`"
+    },
+    {
+      "source": "_dataset_json()",
+      "target": "GeoDataset",
+      "source_files": [
+        "maps/views.py",
+        "maps/models.py"
+      ],
+      "confidence": "INFERRED",
+      "relation": "uses",
+      "why": "inferred connection - not explicitly stated in source"
+    },
+    {
+      "source": "dataset_raster_url()",
+      "target": "GeoDataset",
+      "source_files": [
+        "maps/views.py",
+        "maps/models.py"
+      ],
+      "confidence": "INFERRED",
+      "relation": "uses",
+      "why": "inferred connection - not explicitly stated in source"
+    },
+    {
+      "source": "datasets_api()",
+      "target": "GeoDataset",
+      "source_files": [
+        "maps/views.py",
+        "maps/models.py"
+      ],
+      "confidence": "INFERRED",
+      "relation": "uses",
+      "why": "inferred connection - not explicitly stated in source"
+    },
+    {
+      "source": "_save_dataset()",
+      "target": "GeoDataset",
+      "source_files": [
+        "maps/views.py",
+        "maps/models.py"
+      ],
+      "confidence": "INFERRED",
+      "relation": "uses",
+      "why": "inferred connection - not explicitly stated in source"
+    }
+  ],
+  "questions": [
+    {
+      "type": "bridge_node",
+      "question": "Why does `MapFeature` connect `MapFeature` to `views.py`?",
+      "why": "High betweenness centrality (0.040) - this node is a cross-community bridge."
+    },
+    {
+      "type": "verify_inferred",
+      "question": "Are the 5 inferred relationships involving `GeoDataset` (e.g. with `_dataset_json()` and `dataset_raster_url()`) actually correct?",
+      "why": "`GeoDataset` has 5 INFERRED edges - model-reasoned connections that need verification."
+    },
+    {
+      "type": "isolated_nodes",
+      "question": "What connects `Migration`, `Migration` to the rest of the system?",
+      "why": "2 weakly-connected nodes found - possible documentation gaps or missing edges."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `views.py` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.0946969696969697 - nodes in this community are weakly interconnected."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `os` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.1111111111111111 - nodes in this community are weakly interconnected."
+    }
+  ]
+}

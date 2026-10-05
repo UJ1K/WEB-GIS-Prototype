@@ -21,6 +21,7 @@ h1 { margin: 0; color: #142a33; font-size: 23pt; line-height: 1.1; }
 .title-meta b { display: block; margin-top: 1mm; color: #142a33; font-size: 9pt; font-weight: 600; }
 .map-frame { position: relative; min-height: 0; border: 1px solid #314950; overflow: hidden; background: #dce5e7; }
 #printMap { position: absolute; inset: 0; }
+#printSnapshot { position: absolute; inset: 0; z-index: 1; display: block; width: 100%; height: 100%; object-fit: fill; }
 .north-arrow { position: absolute; z-index: 3; top: 4mm; right: 4mm; display: grid; justify-items: center; color: #12282f; text-shadow: 0 1px #fff; font-size: 13pt; font-weight: 800; }
 .north-arrow span { font-size: 25pt; line-height: .85; transform-origin: center; }
 .map-scale { position: absolute; z-index: 3; left: 4mm; bottom: 4mm; padding: 1.5mm 2mm; border: 1px solid #81969c; border-radius: 2px; color: #11252d; background: #fffE; }

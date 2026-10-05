@@ -5,3 +5,13 @@ __pycache__/
 *.py[cod]
 db.sqlite3
 *.tif
+# AI Tooling and Graphify Output
+.claude/
+.codex/
+.opencode/
+graphify-out/
+AGENTS.md
+CLAUDE.md
+
+@"
+
