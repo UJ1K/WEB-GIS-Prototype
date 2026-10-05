@@ -17,6 +17,7 @@
       <button type="button" id="portraitButton" aria-pressed="true">Portrait</button>
       <button type="button" id="landscapeButton" aria-pressed="false">Landscape</button>
     </div>
+    <button type="button" id="adjustMapButton" aria-pressed="false" aria-label="Enable moving and zooming the print map">Adjust map</button>
     <label class="check-label"><input type="checkbox" id="gridToggle" checked> Coordinate grid</label>
     <div class="button-group export-group" role="group" aria-label="Export map">
       <button type="button" class="print-button" id="printButton">Export PDF</button>
@@ -29,7 +30,7 @@
   <main class="paper-wrap">
     <article id="paper" class="a4-portrait">
       <header class="title-block">
-        <div><p class="eyebrow">DISASTER WEBGIS · CARTOGRAPHIC MAP</p><h1 id="layoutTitle">Map</h1></div>
+        <div><p class="eyebrow">DISASTER CARTOGRAPHIC MAP</p><h1 id="layoutTitle">Map</h1></div>
         <div class="title-meta"><span>Prepared by <b id="layoutAuthor">—</b></span><span>Created <b id="layoutDate">—</b></span></div>
       </header>
       <section class="map-frame" aria-label="Printable map">
@@ -41,7 +42,7 @@
       </section>
       <footer class="map-footer">
         <section class="legend-block"><h2>Legend</h2><div id="legendItems" class="legend-items"></div></section>
-        <section class="inset-block"><h2>Location overview</h2><div id="insetMap"></div><p id="extentText"></p></section>
+        <section class="inset-block"><h2>Inset Map</h2><div id="insetMap"></div><p id="extentText"></p></section>
         <section class="map-notes"><h2>Map information</h2><p id="centerText"></p><p id="zoomText"></p><p>Coordinate system: WGS 84 · EPSG:4326</p><p class="attribution" id="attributionText"></p></section>
       </footer>
     </article>

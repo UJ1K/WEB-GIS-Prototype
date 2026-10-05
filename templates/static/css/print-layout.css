@@ -1,49 +1,300 @@
-:root { color-scheme: light; font-family: Arial, Helvetica, sans-serif; color: #14242b; background: #e8edf0; }
+/* 1. Global Variables & Base (Matched to map_2.css) */
+:root {
+  color-scheme: dark;
+  font: 12px/1.4 "Segoe UI", Roboto, Helvetica, sans-serif;
+  --panel: #02111a;
+  --panel-hover: #09314b;
+  --line: #1c323f;
+  --cyan: #52ff9a;
+  --cyan-dim: rgba(157, 228, 240, 0.2);
+  --text-main: #c4d4d9;
+  --text-muted: #6b8594;
+}
+
 * { box-sizing: border-box; }
-body { margin: 0; }
-.toolbar { position: sticky; top: 0; z-index: 20; display: flex; align-items: end; gap: 14px; flex-wrap: wrap; padding: 12px 18px; color: #e7f0f3; background: #071c27; box-shadow: 0 2px 12px #0003; }
-.toolbar label { display: grid; gap: 4px; font-size: 12px; color: #b7cbd1; }
-.toolbar input[type="text"] { min-width: 190px; padding: 8px 10px; border: 1px solid #47616c; border-radius: 4px; color: #fff; background: #102d39; font: inherit; }
-.toolbar button, .back-link { min-height: 35px; padding: 8px 12px; border: 1px solid #55707a; border-radius: 4px; color: #eef8fa; background: #173440; font: inherit; text-decoration: none; cursor: pointer; }
-.toolbar button[aria-pressed="true"] { border-color: #59d9c1; color: #67e5d0; }
-.button-group { display: flex; gap: 4px; }
-.toolbar .print-button { border-color: #20b89f; color: #052a2b; background: #62e0c7; font-weight: 700; }
-.check-label { display: flex !important; align-items: center; gap: 7px !important; min-height: 35px; }
-#layoutStatus { align-self: center; color: #ffcf86; font-size: 12px; }
+
+body { 
+  margin: 0; 
+  background: #000; 
+  color: var(--text-main); 
+}
+
+/* 2. Flat Dark Toolbar */
+.toolbar { 
+  position: sticky; 
+  top: 0; 
+  z-index: 20; 
+  display: flex; 
+  align-items: center; 
+  gap: 14px; 
+  flex-wrap: wrap; 
+  padding: 7px 10px; 
+  color: var(--text-main); 
+  background: rgba(5, 18, 25, .92); 
+  border-bottom: 1px solid var(--line); 
+}
+
+.toolbar label { 
+  display: grid; 
+  gap: 4px; 
+  font-size: 10px; 
+  color: var(--text-muted); 
+}
+
+.toolbar input[type="text"] { 
+  min-width: 190px; 
+  padding: 6px 9px; 
+  border: 1px solid var(--line); 
+  border-radius: 0; 
+  color: var(--text-main); 
+  background: #061922; 
+  font: inherit; 
+}
+
+.toolbar button, .back-link { 
+  min-height: auto; 
+  padding: 7px 11px; 
+  border: 1px solid var(--line); 
+  border-radius: 0; 
+  color: var(--text-main); 
+  background: transparent; 
+  font: inherit; 
+  font-size: 11px; 
+  text-decoration: none; 
+  cursor: pointer; 
+  display: flex; 
+  align-items: center; 
+}
+
+.toolbar button:hover, .back-link:hover { 
+  background: var(--panel-hover); 
+  color: #fff; 
+}
+
+.toolbar button[aria-pressed="true"] { 
+  background: var(--panel-hover); 
+  color: var(--cyan); 
+  border-color: var(--cyan); 
+}
+
+.button-group { display: flex; gap: 0; }
+.button-group button+button { border-left: none; } 
+
+.toolbar .print-button { 
+  background: transparent; 
+  border: 1px solid var(--cyan); 
+  color: var(--cyan); 
+  text-shadow: 0 0 8px rgba(82, 255, 154, 0.4); 
+  font-weight: 600; 
+}
+
+.toolbar .print-button:hover { 
+  background: var(--panel-hover); 
+}
+
+.check-label { 
+  display: flex !important; 
+  align-items: center; 
+  gap: 7px !important; 
+  min-height: auto; 
+}
+
+.check-label input[type="checkbox"] { 
+  accent-color: var(--cyan); 
+}
+
+#layoutStatus { 
+  align-self: center; 
+  color: var(--text-muted); 
+  font-size: 10px; 
+}
+
+/* 3. Paper Canvas & Print UI */
 .paper-wrap { padding: 24px; overflow: auto; }
-#paper { margin: 0 auto; display: grid; gap: 5mm; padding: 12mm; background: #fff; box-shadow: 0 5px 28px #162a3540; }
+
+#paper { 
+  margin: 0 auto; 
+  display: grid; 
+  gap: 5mm; 
+  padding: 12mm; 
+  background: var(--panel); 
+  box-shadow: 0 16px 48px rgba(0, 0, 0, .55); 
+  border: 1px solid var(--line); 
+}
+
 .a4-portrait { width: 210mm; height: 297mm; grid-template-rows: auto minmax(0, 1fr) 43mm; }
 .a4-landscape { width: 297mm; height: 210mm; grid-template-rows: auto minmax(0, 1fr) 36mm; }
-.title-block { display: flex; justify-content: space-between; align-items: end; gap: 10mm; padding-bottom: 3mm; border-bottom: 1px solid #aab9bf; }
-.eyebrow { margin: 0 0 2mm; color: #54717a; font-size: 8pt; font-weight: 700; letter-spacing: .12em; }
-h1 { margin: 0; color: #142a33; font-size: 23pt; line-height: 1.1; }
-.title-meta { display: grid; gap: 2mm; min-width: 44mm; color: #576b71; font-size: 8pt; }
-.title-meta b { display: block; margin-top: 1mm; color: #142a33; font-size: 9pt; font-weight: 600; }
-.map-frame { position: relative; min-height: 0; border: 1px solid #314950; overflow: hidden; background: #dce5e7; }
+
+/* 4. Map Titles & Meta Data */
+.title-block { 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: end; 
+  gap: 10mm; 
+  padding-bottom: 3mm; 
+  border-bottom: 1px solid var(--line); 
+}
+
+.eyebrow { 
+  margin: 0 0 2mm; 
+  color: var(--cyan); 
+  font-size: 8pt; 
+  font-weight: 700; 
+  letter-spacing: .12em; 
+  text-transform: uppercase; 
+}
+
+h1 { margin: 0; color: #f0f7f8; font-size: 23pt; line-height: 1.1; }
+
+.title-meta { 
+  display: grid; 
+  gap: 2mm; 
+  min-width: 44mm; 
+  color: var(--text-muted); 
+  font-size: 8pt; 
+}
+
+.title-meta b { 
+  display: block; 
+  margin-top: 1mm; 
+  color: var(--text-main); 
+  font-size: 9pt; 
+  font-weight: 600; 
+}
+
+/* 5. Map Elements & Overlays */
+.map-frame { 
+  position: relative; 
+  min-height: 0; 
+  border: 1px solid var(--line); 
+  overflow: hidden; 
+  background: #000; 
+}
+
 #printMap { position: absolute; inset: 0; }
-#printSnapshot { position: absolute; inset: 0; z-index: 1; display: block; width: 100%; height: 100%; object-fit: fill; }
-.north-arrow { position: absolute; z-index: 3; top: 4mm; right: 4mm; display: grid; justify-items: center; color: #12282f; text-shadow: 0 1px #fff; font-size: 13pt; font-weight: 800; }
+
+#printSnapshot { 
+  position: absolute; 
+  inset: 0; 
+  z-index: 1; 
+  display: block; 
+  width: 100%; 
+  height: 100%; 
+  object-fit: fill; 
+}
+
+.north-arrow { 
+  position: absolute; 
+  z-index: 3; 
+  top: 4mm; 
+  right: 4mm; 
+  display: grid; 
+  justify-items: center; 
+  color: #fff; 
+  text-shadow: 0 1px 4px rgb(255, 255, 255); 
+  font-size: 13pt; 
+  font-weight: 800; 
+}
+
 .north-arrow span { font-size: 25pt; line-height: .85; transform-origin: center; }
-.map-scale { position: absolute; z-index: 3; left: 4mm; bottom: 4mm; padding: 1.5mm 2mm; border: 1px solid #81969c; border-radius: 2px; color: #11252d; background: #fffE; }
-.graticule-label { position: absolute; z-index: 3; left: 50%; transform: translateX(-50%); padding: 1mm 2mm; color: #122b32; background: #ffffffcf; font: 7pt Arial, sans-serif; pointer-events: none; }
-.graticule-top { top: 1mm; }.graticule-bottom { bottom: 1mm; }
-.map-footer { display: grid; grid-template-columns: 1fr 48mm 1fr; gap: 7mm; min-height: 0; padding-top: 1mm; }
-.map-footer h2 { margin: 0 0 2mm; color: #36535b; font-size: 8pt; letter-spacing: .08em; text-transform: uppercase; }
+
+.map-scale { 
+  position: absolute; 
+  z-index: 3; 
+  left: 4mm; 
+  bottom: 4mm; 
+  padding: 1.5mm 2mm; 
+  border: 1px solid var(--line); 
+  border-radius: 2px; 
+  color: var(--text-main); 
+  background: rgba(2, 17, 26, .8); 
+}
+
+.graticule-label { 
+  position: absolute; 
+  z-index: 3; 
+  left: 50%; 
+  transform: translateX(-50%); 
+  padding: 1mm 2mm; 
+  color: var(--text-main); 
+  background: rgba(2, 17, 26, .8); 
+  font: 7pt "Segoe UI", sans-serif; 
+  pointer-events: none; 
+  border-radius: 2px; 
+}
+
+.graticule-top { top: 1mm; }
+.graticule-bottom { bottom: 1mm; }
+
+/* 6. Footer, Legend, & Notes */
+.map-footer { 
+  display: grid; 
+  grid-template-columns: 1fr 48mm 1fr; 
+  gap: 7mm; 
+  min-height: 0; 
+  padding-top: 1mm; 
+}
+
+.map-footer h2 { 
+  margin: 0 0 2mm; 
+  color: var(--cyan); 
+  font-size: 8pt; 
+  letter-spacing: .08em; 
+  text-transform: uppercase; 
+}
+
 .legend-items { display: grid; gap: 1.5mm; max-height: 30mm; overflow: hidden; }
-.legend-item { display: flex; align-items: center; gap: 2mm; color: #243941; font-size: 8pt; }
-.legend-symbol { width: 7mm; height: 3mm; flex: none; border: 1px solid #374d54; }
-.inset-block { min-width: 0; }.inset-block h2 { text-align: center; }
-#insetMap { width: 100%; height: 25mm; border: 1px solid #aab9bf; }
-#extentText, .map-notes p { margin: 1.3mm 0; color: #54686e; font-size: 7pt; line-height: 1.25; }
-.map-notes p:first-of-type { margin-top: 0; }.attribution { font-size: 6pt !important; }
-@media (max-width: 850px) { .paper-wrap { padding: 12px; } #paper { transform-origin: top left; } }
+
+.legend-item { display: flex; align-items: center; gap: 2mm; color: var(--text-main); font-size: 8pt; }
+
+.legend-symbol { width: 7mm; height: 3mm; flex: none; border: 1px solid var(--line); }
+
+.inset-block { min-width: 0; }
+.inset-block h2 { text-align: center; }
+
+#insetMap { width: 100%; height: 25mm; border: 1px solid var(--line); background: #000; }
+
+#extentText, .map-notes p { 
+  margin: 1.3mm 0; 
+  color: var(--text-muted); 
+  font-size: 7pt; 
+  line-height: 1.25; 
+}
+
+.map-notes p:first-of-type { margin-top: 0; }
+.attribution { font-size: 6pt !important; }
+
+/* 7. Responsiveness & Print Media Queries */
+@media (max-width: 850px) { 
+  .paper-wrap { padding: 12px; } 
+  #paper { transform-origin: top left; } 
+}
+
 @media print {
   @page { size: A4 var(--print-orientation, portrait); margin: 0; }
-  html, body { width: 100%; height: 100%; margin: 0; background: #fff; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  
+  html, body { 
+    width: 100%; 
+    height: 100%; 
+    margin: 0; 
+    background: var(--panel); 
+    print-color-adjust: exact; 
+    -webkit-print-color-adjust: exact; 
+  }
+  
   .no-print { display: none !important; }
   .paper-wrap { padding: 0; overflow: visible; }
-  #paper { margin: 0; box-shadow: none; break-after: avoid; page-break-after: avoid; }
+  
+  #paper { 
+    margin: 0; 
+    box-shadow: none; 
+    border: none; 
+    break-after: avoid; 
+    page-break-after: avoid; 
+  }
+  
   #paper.a4-landscape { width: 297mm; height: 210mm; }
   #paper.a4-portrait { width: 210mm; height: 297mm; }
+  
   .map-frame { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
-}
+  }
