@@ -293,14 +293,15 @@
       });
     }
 
-    await new Promise(resolve => {
-      requestAnimationFrame(() => requestAnimationFrame(resolve));
-      setTimeout(resolve, 100);
-    });
+    // 1. Force MapLibre to render a fresh frame
+    map.triggerRepaint();
 
+    // 2. CRITICAL: Grab the canvas and dataURL IMMEDIATELY (synchronously) 
+    // before any 'await' yields the thread and clears the WebGL buffer.
     const canvas = map.getCanvas();
+    const dataUrl = canvas.toDataURL('image/png');
+
     let snapshot = $('printSnapshot');
-    
     if (!snapshot) {
       snapshot = document.createElement('img');
       snapshot.id = 'printSnapshot';
@@ -314,7 +315,7 @@
       $('printMap').append(snapshot);
     }
     
-    snapshot.src = canvas.toDataURL('image/png');
+    snapshot.src = dataUrl;
     await snapshot.decode();
     canvas.style.visibility = 'hidden';
   }
@@ -360,9 +361,15 @@
     } catch (error) {
       statusEl.textContent = `Export failed: ${error.message}`;
     } finally {
+      // Cleanup main map
       map.getCanvas().style.visibility = '';
       if ($('printSnapshot'))$('printSnapshot').remove();
       map.resize();
+
+      // Cleanup inset map
+      insetMap.getCanvas().style.visibility = '';
+      if ($('insetSnapshot'))$('insetSnapshot').remove();
+      insetMap.resize();
     }
   }
 

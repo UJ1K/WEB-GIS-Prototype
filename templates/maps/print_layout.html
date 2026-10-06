@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Print Map Layout | DISASTER WEBGIS</title>
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.css">
-  <link rel="stylesheet" href="{% static 'css/print-layout.css' %}?v=20261005-export">
+  <link rel="stylesheet" href="{% static 'css/print-layout.css' %}?v=20261006-sidebar">
 </head>
 <body>
   <header class="no-print toolbar">
@@ -16,6 +16,12 @@
     <div class="button-group" role="group" aria-label="Paper orientation">
       <button type="button" id="portraitButton" aria-pressed="true">Portrait</button>
       <button type="button" id="landscapeButton" aria-pressed="false">Landscape</button>
+    </div>
+    <div class="button-group" role="group" aria-label="Theme">
+      <button type="button" id="darkThemeButton" aria-pressed="true">Dark Theme</button>
+      <button type="button" id="lightThemeButton" aria-pressed="false">Light Theme</button>
+      <button type="button" id="imageryThemeButton" aria-pressed="false">Imagery</button>
+
     </div>
     <button type="button" id="adjustMapButton" aria-pressed="true" aria-label="Lock the print map extent" title="Drag to pan and scroll to zoom">Lock map</button>
     <label class="check-label"><input type="checkbox" id="gridToggle" checked> Coordinate grid</label>

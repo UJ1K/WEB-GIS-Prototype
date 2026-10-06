@@ -13,37 +13,47 @@
 
 * { box-sizing: border-box; }
 
+/* UPDATED: Body is now a flex container to support a sidebar layout */
 body { 
   margin: 0; 
   background: #000; 
   color: var(--text-main); 
+  display: flex;
+  flex-direction: row;
+  height: 100vh;
+  overflow: hidden;
 }
 
-/* 2. Flat Dark Toolbar */
+
+/* 2. Flat Dark Sidebar (Previously Top Toolbar) */
 .toolbar { 
-  position: sticky; 
-  top: 0; 
   z-index: 20; 
   display: flex; 
-  align-items: center; 
-  gap: 14px; 
-  flex-wrap: wrap; 
-  padding: 7px 10px; 
+  flex-direction: column; /* Stack items vertically */
+  align-items: stretch; /* Stretch items to full width */
+  gap: 16px; 
+  width: 260px; /* Fixed sidebar width */
+  min-width: 260px;
+  height: 100vh;
+  overflow-y: auto;
+  padding: 20px 15px; 
   color: var(--text-main); 
-  background: rgba(5, 18, 25, .92); 
-  border-bottom: 1px solid var(--line); 
+  background: #030e14; /* Solid deep dark background for sidebar */
+  border-right: 1px solid var(--line); /* Border on right instead of bottom */
 }
 
 .toolbar label { 
-  display: grid; 
-  gap: 4px; 
+  display: flex; 
+  flex-direction: column;
+  gap: 6px; 
   font-size: 10px; 
   color: var(--text-muted); 
 }
 
 .toolbar input[type="text"] { 
-  min-width: 190px; 
-  padding: 6px 9px; 
+  width: 100%; 
+  min-width: 0; 
+  padding: 8px 10px; 
   border: 1px solid var(--line); 
   border-radius: 0; 
   color: var(--text-main); 
@@ -53,7 +63,7 @@ body {
 
 .toolbar button, .back-link { 
   min-height: auto; 
-  padding: 7px 11px; 
+  padding: 9px 11px; 
   border: 1px solid var(--line); 
   border-radius: 0; 
   color: var(--text-main); 
@@ -64,6 +74,7 @@ body {
   cursor: pointer; 
   display: flex; 
   align-items: center; 
+  justify-content: center; /* Center text in sidebar buttons */
 }
 
 .toolbar button:hover, .back-link:hover { 
@@ -77,26 +88,38 @@ body {
   border-color: var(--cyan); 
 }
 
-.button-group { display: flex; gap: 0; }
-.button-group button+button { border-left: none; } 
+/* Keep Portrait/Landscape buttons side-by-side */
+.button-group { 
+  display: flex; 
+  flex-direction: row; 
+  width: 100%; 
+}
+.button-group button { 
+  flex: 1; /* Distributes width equally */
+  margin: 0 !important; /* Prevents jagged vertical misalignment */
+  padding: 12px 10px; /* Uniform chunky padding for all grouped buttons */
+}
 
+/* Remove double borders between connected buttons */
+.button-group button + button { 
+  border-left: none; 
+}
 .toolbar .print-button { 
   background: transparent; 
   border: 1px solid var(--cyan); 
   color: var(--cyan); 
   text-shadow: 0 0 8px rgba(82, 255, 154, 0.4); 
-  font-weight: 600; 
+  font-weight: 700; 
+  /* Removed the margin-top and padding that broke the flex row */
 }
 
 .toolbar .print-button:hover { 
   background: var(--panel-hover); 
 }
 
-.check-label { 
-  display: flex !important; 
-  align-items: center; 
-  gap: 7px !important; 
-  min-height: auto; 
+/* 4. Apply spacing to the entire group instead of just one button */
+.export-group {
+  margin-top: 10px;
 }
 
 .check-label input[type="checkbox"] { 
@@ -106,11 +129,20 @@ body {
 #layoutStatus { 
   align-self: center; 
   color: var(--text-muted); 
-  font-size: 10px; 
+  font-size: 12px; 
+  text-align: center;
 }
 
 /* 3. Paper Canvas & Print UI */
-.paper-wrap { padding: 24px; overflow: auto; }
+/* UPDATED: Wrapper flexes to fill the remaining screen space next to sidebar */
+.paper-wrap { 
+  flex: 1; 
+  height: 100vh;
+  padding: 30px; 
+  overflow: auto; 
+  display: grid;
+  place-items: center; /* Centers the paper visually in the workspace */
+}
 
 #paper { 
   margin: 0 auto; 
@@ -198,16 +230,34 @@ h1 { margin: 0; color: #f0f7f8; font-size: 23pt; line-height: 1.1; }
 
 .north-arrow span { font-size: 25pt; line-height: .85; transform-origin: center; }
 
+/* UPDATED: Fixes the default injected MapLibre/Mapbox white scale bar */
+.maplibregl-ctrl-scale {
+  background-color: rgba(2, 17, 26, 0.9) !important;
+  border: none !important;
+  
+  /* INCREASED: Thicker neon borders */
+  border-bottom: 3px solid var(--cyan) !important;
+  border-left: 3px solid var(--cyan) !important;
+  border-right: 3px solid var(--cyan) !important;
+  
+  color: var(--text-main) !important;
+  
+  /* INCREASED: Larger padding and text size */
+  padding: 8px 14px !important; 
+  font-size: 15px !important; 
+  font-weight: 600 !important; 
+  
+  font-family: inherit !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important; 
+  line-height: 1.2 !important;
+}
+
+/* Base custom scale wrapper adjustments */
 .map-scale { 
   position: absolute; 
   z-index: 3; 
-  left: 4mm; 
-  bottom: 4mm; 
-  padding: 1.5mm 2mm; 
-  border: 1px solid var(--line); 
-  border-radius: 2px; 
-  color: var(--text-main); 
-  background: rgba(2, 17, 26, .8); 
+  left: 8mm; /* INCREASED from 4mm */
+  bottom: 8mm; /* INCREASED from 4mm */
 }
 
 .graticule-label { 
@@ -266,7 +316,9 @@ h1 { margin: 0; color: #f0f7f8; font-size: 23pt; line-height: 1.1; }
 
 /* 7. Responsiveness & Print Media Queries */
 @media (max-width: 850px) { 
-  .paper-wrap { padding: 12px; } 
+  body { flex-direction: column; }
+  .toolbar { width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--line); flex-direction: row; flex-wrap: wrap; }
+  .paper-wrap { padding: 12px; display: block; } 
   #paper { transform-origin: top left; } 
 }
 
@@ -277,13 +329,16 @@ h1 { margin: 0; color: #f0f7f8; font-size: 23pt; line-height: 1.1; }
     width: 100%; 
     height: 100%; 
     margin: 0; 
+    display: block; /* Disable flex layout for print */
+    overflow: visible;
     background: var(--panel); 
     print-color-adjust: exact; 
     -webkit-print-color-adjust: exact; 
   }
   
-  .no-print { display: none !important; }
-  .paper-wrap { padding: 0; overflow: visible; }
+  .no-print, .toolbar { display: none !important; } /* Hide sidebar on print */
+  
+  .paper-wrap { padding: 0; overflow: visible; display: block; }
   
   #paper { 
     margin: 0; 
@@ -297,4 +352,4 @@ h1 { margin: 0; color: #f0f7f8; font-size: 23pt; line-height: 1.1; }
   #paper.a4-portrait { width: 210mm; height: 297mm; }
   
   .map-frame { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
-  }
+}
