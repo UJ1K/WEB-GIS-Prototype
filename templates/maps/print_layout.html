@@ -17,7 +17,7 @@
       <button type="button" id="portraitButton" aria-pressed="true">Portrait</button>
       <button type="button" id="landscapeButton" aria-pressed="false">Landscape</button>
     </div>
-    <button type="button" id="adjustMapButton" aria-pressed="false" aria-label="Enable moving and zooming the print map">Adjust map</button>
+    <button type="button" id="adjustMapButton" aria-pressed="true" aria-label="Lock the print map extent" title="Drag to pan and scroll to zoom">Lock map</button>
     <label class="check-label"><input type="checkbox" id="gridToggle" checked> Coordinate grid</label>
     <div class="button-group export-group" role="group" aria-label="Export map">
       <button type="button" class="print-button" id="printButton">Export PDF</button>
@@ -51,6 +51,6 @@
   <script src="https://cdn.jsdelivr.net/npm/georaster@1.6.0/dist/georaster.browser.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
-  <script src="{% static 'js/print-layout.js' %}?v=20261005-export"></script>
+  <script src="{% static 'js/print-layout.js' %}?v=20261006-interactive-export"></script>
 </body>
 </html>

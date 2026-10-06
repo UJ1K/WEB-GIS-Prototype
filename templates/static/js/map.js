@@ -20,16 +20,22 @@
   map.once('load', () => resolveMapReady());
   const byId = id => document.getElementById(id);
   const exportButton = byId('exportButton');
-  exportButton.addEventListener('click', async () => {
+  exportButton.addEventListener('click', () => {
     exportButton.disabled = true;
     exportButton.textContent = 'Opening layout…';
+    let printWindow;
     try {
-      await mapReady;
-      await new Promise(resolve => map.once('idle', resolve));
-      sessionStorage.setItem('webgis-print-state', JSON.stringify(createPrintState()));
-      const printWindow = window.open('/print-layout/', '_blank');
+      const saveState = maxEdge => sessionStorage.setItem('webgis-print-state', JSON.stringify(createPrintState(maxEdge)));
+      try { saveState(1400); }
+      catch (error) {
+        if (error.name !== 'QuotaExceededError' && error.name !== 'NS_ERROR_DOM_QUOTA_REACHED') throw error;
+        try { saveState(700); }
+        catch { throw new Error('The active raster layers exceed this browser tab’s storage limit. Hide some raster layers and export again.'); }
+      }
+      printWindow = window.open('/print-layout/', '_blank');
       if (!printWindow) throw new Error('The print layout was blocked. Allow pop-ups for this site and try again.');
     } catch (error) {
+      printWindow?.close();
       window.alert(error.message || 'Could not prepare the print layout.');
     } finally {
       exportButton.disabled = false;
@@ -40,8 +46,18 @@
   const setVisibility = (id, visible) => { if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', visible ? 'visible' : 'none'); };
   const setOpacity = (id, value) => { if (map.getLayer(id)) map.setPaintProperty(id, 'raster-opacity', value); };
   const orderLayerGroups = new Map();
+  const exportRasterLayers = new Map();
   function registerOrderedLayer(key, layerIds) { orderLayerGroups.set(key, layerIds.filter(id => map.getLayer(id))); refreshLayerOrderControls(); }
-  function createPrintState() {
+  function canvasDataUrl(source, maxEdge) {
+    const scale = Math.min(1, maxEdge / Math.max(source.width, source.height));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(source.width * scale));
+    canvas.height = Math.max(1, Math.round(source.height * scale));
+    canvas.getContext('2d').drawImage(source, 0, 0, canvas.width, canvas.height);
+    const webp = canvas.toDataURL('image/webp', .84);
+    return webp.startsWith('data:image/webp;') ? webp : canvas.toDataURL('image/png');
+  }
+  function createPrintState(maxRasterEdge = 1400) {
     const layers = [];
     const layerRows = [...document.querySelectorAll('.layer-order-row')];
     layerRows.forEach(row => {
@@ -55,8 +71,9 @@
     });
     const bounds = map.getBounds();
     const rasters = [];
-    if (rasterRecord?.canvas) rasters.push({ key: 'local-input', bounds: rasterRecord.bounds, opacity: Number(inputOpacity.value) / 100, dataUrl: rasterRecord.canvas.toDataURL('image/png') });
-    if (indexRecord?.canvas) rasters.push({ key: 'calculated-index', bounds: indexRecord.bounds, opacity: Number(resultOpacity.value) / 100, dataUrl: indexRecord.canvas.toDataURL('image/png') });
+    if (rasterRecord?.canvas) rasters.push({ key: 'local-input', bounds: rasterRecord.bounds, opacity: Number(inputOpacity.value) / 100, dataUrl: canvasDataUrl(rasterRecord.canvas, maxRasterEdge) });
+    if (indexRecord?.canvas) rasters.push({ key: 'calculated-index', bounds: indexRecord.bounds, opacity: Number(resultOpacity.value) / 100, dataUrl: canvasDataUrl(indexRecord.canvas, maxRasterEdge) });
+    exportRasterLayers.forEach((record, key) => rasters.push({ key, bounds: record.bounds, opacity: record.opacity, dataUrl: canvasDataUrl(record.canvas, maxRasterEdge) }));
     return {
       center: map.getCenter().toArray(), zoom: map.getZoom(), bearing: map.getBearing(), pitch: map.getPitch(),
       basemap: currentBasemap, labels: labelsEnabled, terrain: byId('btn-terrain').getAttribute('aria-pressed') === 'true',
@@ -589,6 +606,7 @@
         return bands.map(index => stretch(values[index], raster.mins?.[index], raster.maxs?.[index])).concat(255);
       };
       record = addRasterImage(raster, colorAt, Number(opacity.value) / 100, bands);
+      exportRasterLayers.set(row.dataset.layerKey, { canvas: record.canvas, bounds: record.bounds, opacity: Number(opacity.value) / 100 });
       setVisibility(record.layerId, visible.checked);
       registerOrderedLayer(row.dataset.layerKey, [record.layerId]);
     }
@@ -625,7 +643,7 @@
         status.textContent = error.message || 'Could not render raster'; row.title = status.textContent;
       }
     };
-    visible.onchange = () => { if (record) setVisibility(record.layerId, visible.checked); }; opacity.oninput = () => { if (record) setOpacity(record.layerId, Number(opacity.value) / 100); };
+    visible.onchange = () => { if (record) setVisibility(record.layerId, visible.checked); }; opacity.oninput = () => { if (record) { const value = Number(opacity.value) / 100; setOpacity(record.layerId, value); const saved = exportRasterLayers.get(row.dataset.layerKey); if (saved) saved.opacity = value; } };
   }
 
   // Local GeoTIFF controls and spectral index output.

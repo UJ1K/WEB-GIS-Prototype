@@ -75,10 +75,10 @@
   function setMapAdjustmentEnabled(enabled) {
     interactionControls.forEach(control => enabled ? control?.enable() : control?.disable());
     $('adjustMapButton').setAttribute('aria-pressed', String(enabled));
-    $('adjustMapButton').textContent = enabled ? 'Done adjusting' : 'Adjust map';
-    $('adjustMapButton').setAttribute('aria-label', enabled ? 'Finish moving and zooming the print map' : 'Enable moving and zooming the print map');
+    $('adjustMapButton').textContent = enabled ? 'Lock map' : 'Move / zoom map';
+    $('adjustMapButton').setAttribute('aria-label', enabled ? 'Lock the print map extent' : 'Enable moving and zooming the print map');
   }
-  setMapAdjustmentEnabled(false);
+  setMapAdjustmentEnabled(true);
   let resolveMapReady;
   const mapReady = new Promise(resolve => { resolveMapReady = resolve; });
   let resolveLayersReady;
@@ -221,17 +221,19 @@
       features.push({ type: 'Feature', geometry: { type: 'LineString', coordinates: [[west, lat], [east, lat]] } });
     }
 
-    if (map.getLayer('print-grid-lines')) map.removeLayer('print-grid-lines');
-    if (map.getSource('print-grid')) map.removeSource('print-grid');
-    
-    map.addSource('print-grid', { type: 'geojson', data: { type: 'FeatureCollection', features } });
-    map.addLayer({ 
-      id: 'print-grid-lines', 
-      type: 'line', 
-      source: 'print-grid', 
-      layout: { visibility: gridToggle.checked ? 'visible' : 'none' }, 
-      paint: { 'line-color': '#233c45', 'line-width': 0.5, 'line-opacity': 0.25, 'line-dasharray': [2, 4] } 
-    });
+    const gridData = { type: 'FeatureCollection', features };
+    if (map.getSource('print-grid')) {
+      map.getSource('print-grid').setData(gridData);
+    } else {
+      map.addSource('print-grid', { type: 'geojson', data: gridData });
+      map.addLayer({
+        id: 'print-grid-lines',
+        type: 'line',
+        source: 'print-grid',
+        layout: { visibility: gridToggle.checked ? 'visible' : 'none' },
+        paint: { 'line-color': '#233c45', 'line-width': 0.5, 'line-opacity': 0.25, 'line-dasharray': [2, 4] }
+      });
+    }
 
     $('gridTop').textContent = `Longitude ${((west + east) / 2).toFixed(3)}° · grid ${step.toPrecision(1)}°`;
     $('gridBottom').textContent = `Latitude ${((south + north) / 2).toFixed(3)}°`;
@@ -239,14 +241,15 @@
 
   function updateInsetExtent() {
     const b = map.getBounds();
-    if (insetMap.getSource('print-extent')) insetMap.removeSource('print-extent');
-    if (insetMap.getLayer('print-extent-fill')) insetMap.removeLayer('print-extent-fill');
-    if (insetMap.getLayer('print-extent-line')) insetMap.removeLayer('print-extent-line');
-    
-    insetMap.addSource('print-extent', { 
-      type: 'geojson', 
-      data: { type: 'Feature', geometry: { type: 'Polygon', coordinates: [[[b.getWest(), b.getSouth()], [b.getEast(), b.getSouth()], [b.getEast(), b.getNorth()], [b.getWest(), b.getNorth()], [b.getWest(), b.getSouth()]]] } } 
-    });
+    const data = {
+      type: 'Feature',
+      geometry: { type: 'Polygon', coordinates: [[[b.getWest(), b.getSouth()], [b.getEast(), b.getSouth()], [b.getEast(), b.getNorth()], [b.getWest(), b.getNorth()], [b.getWest(), b.getSouth()]]] }
+    };
+    if (insetMap.getSource('print-extent')) {
+      insetMap.getSource('print-extent').setData(data);
+      return;
+    }
+    insetMap.addSource('print-extent', { type: 'geojson', data });
     insetMap.addLayer({ id: 'print-extent-fill', type: 'fill', source: 'print-extent', paint: { 'fill-color': '#da4838', 'fill-opacity': 0.12 } });
     insetMap.addLayer({ id: 'print-extent-line', type: 'line', source: 'print-extent', paint: { 'line-color': '#d5392d', 'line-width': 2 } });
   }
@@ -405,8 +408,10 @@
     map.resize();
   });
 
+  let gridDebounce;
   map.on('moveend', () => {
-    renderCoordinateGrid();
+    clearTimeout(gridDebounce);
+    gridDebounce = setTimeout(renderCoordinateGrid, 250);
     
     // Prevent race condition when moving map
     if (insetMap.loaded()) {
