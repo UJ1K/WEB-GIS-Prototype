@@ -209,6 +209,8 @@
     const bounds = map.getBounds();
     const [west, south, east, north] = [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()];
     
+    if (west === east || south === north) return;
+
     const rawStep = Math.max(0.01, Math.max(east - west, north - south) / 5);
     const magnitude = 10 ** Math.floor(Math.log10(rawStep));
     const step = [1, 2, 5, 10].map(v => v * magnitude).find(v => v >= rawStep) || 10 * magnitude;
@@ -222,33 +224,53 @@
     }
 
     const gridData = { type: 'FeatureCollection', features };
+    
+    // Safely handle style reloads where sources/layers are wiped out
     if (map.getSource('print-grid')) {
       map.getSource('print-grid').setData(gridData);
+      if (!map.getLayer('print-grid-lines')) {
+        map.addLayer({
+          id: 'print-grid-lines',
+          type: 'line',
+          source: 'print-grid',
+          layout: { visibility: gridToggle?.checked ? 'visible' : 'none' },
+          paint: { 'line-color': '#52ff9a', 'line-width': 1.5, 'line-opacity': 0, 'line-dasharray': [2, 4] }
+        });
+      }
     } else {
       map.addSource('print-grid', { type: 'geojson', data: gridData });
       map.addLayer({
         id: 'print-grid-lines',
         type: 'line',
         source: 'print-grid',
-        layout: { visibility: gridToggle.checked ? 'visible' : 'none' },
-        paint: { 'line-color': '#233c45', 'line-width': 0.5, 'line-opacity': 0.25, 'line-dasharray': [2, 4] }
+        layout: { visibility: gridToggle?.checked ? 'visible' : 'none' },
+        paint: { 'line-color': '#52ff9a', 'line-width': 12.5, 'line-opacity': 0, 'line-dasharray': [2, 4] }
       });
     }
 
-    $('gridTop').textContent = `Longitude ${((west + east) / 2).toFixed(3)}° · grid ${step.toPrecision(1)}°`;
-    $('gridBottom').textContent = `Latitude ${((south + north) / 2).toFixed(3)}°`;
+    if ($('gridTop'))$('gridTop').textContent = `Longitude ${((west + east) / 2).toFixed(3)}° · grid ${step.toPrecision(1)}°`;
+    if ($('gridBottom'))$('gridBottom').textContent = `Latitude ${((south + north) / 2).toFixed(3)}°`;
   }
 
   function updateInsetExtent() {
+    if (!insetMap.isStyleLoaded()) return;
     const b = map.getBounds();
     const data = {
       type: 'Feature',
       geometry: { type: 'Polygon', coordinates: [[[b.getWest(), b.getSouth()], [b.getEast(), b.getSouth()], [b.getEast(), b.getNorth()], [b.getWest(), b.getNorth()], [b.getWest(), b.getSouth()]]] }
     };
+    
     if (insetMap.getSource('print-extent')) {
       insetMap.getSource('print-extent').setData(data);
+      if (!insetMap.getLayer('print-extent-fill')) {
+        insetMap.addLayer({ id: 'print-extent-fill', type: 'fill', source: 'print-extent', paint: { 'fill-color': '#da4838', 'fill-opacity': 0.12 } });
+      }
+      if (!insetMap.getLayer('print-extent-line')) {
+        insetMap.addLayer({ id: 'print-extent-line', type: 'line', source: 'print-extent', paint: { 'line-color': '#d5392d', 'line-width': 2 } });
+      }
       return;
     }
+    
     insetMap.addSource('print-extent', { type: 'geojson', data });
     insetMap.addLayer({ id: 'print-extent-fill', type: 'fill', source: 'print-extent', paint: { 'fill-color': '#da4838', 'fill-opacity': 0.12 } });
     insetMap.addLayer({ id: 'print-extent-line', type: 'line', source: 'print-extent', paint: { 'line-color': '#d5392d', 'line-width': 2 } });
@@ -260,11 +282,11 @@
     const frameMeters = metersPerPixel * $('printMap').clientWidth;
     const frameOnPaperMeters = parseFloat(getComputedStyle($('paper')).width) / 3779.5276;
     
-    $('zoomText').textContent = `Zoom: ${map.getZoom().toFixed(2)} · Approx. scale 1:${Math.max(1, Math.round(frameMeters / frameOnPaperMeters)).toLocaleString()}`;
-    $('centerText').textContent = `Center: ${map.getCenter().lat.toFixed(5)}° N, ${map.getCenter().lng.toFixed(5)}° E`;
+    if ($('zoomText'))$('zoomText').textContent = `Zoom: ${map.getZoom().toFixed(2)} · Approx. scale 1:${Math.max(1, Math.round(frameMeters / frameOnPaperMeters)).toLocaleString()}`;
+    if ($('centerText'))$('centerText').textContent = `Center: ${map.getCenter().lat.toFixed(5)}° N, ${map.getCenter().lng.toFixed(5)}° E`;
     
     const bounds = map.getBounds();
-    $('extentText').textContent = `Extent: ${[bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()].map(v => v.toFixed(3)).join(', ')}`;
+    if ($('extentText'))$('extentText').textContent = `Extent: ${[bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()].map(v => v.toFixed(3)).join(', ')}`;
   }
 
   // --- 6. Export Capabilities ---
