@@ -14,3 +14,9 @@ graphify-out/
 AGENTS.md
 CLAUDE.md
 .github/
+.gitattributes
+.gitignore
+.runserver-check.stdout
+.runserver-check.stderr
+.WEBGIS
+.pre-commit-config
