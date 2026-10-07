@@ -1,60 +1,66 @@
 <!doctype html>
 {% load static %}
 <html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Print Map Layout | DISASTER WEBGIS</title>
-  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.css">
-  <link rel="stylesheet" href="{% static 'css/print-layout.css' %}?v=20261006-sidebar">
-</head>
-<body>
-  <header class="no-print toolbar">
-    <a class="back-link" href="/">← Back to map</a>
-    <label>Map title <input id="layoutTitleInput" type="text" maxlength="140" value="Map"></label>
-    <label>Prepared by <input id="authorInput" type="text" maxlength="100" placeholder="Name or organization"></label>
-    <div class="button-group" role="group" aria-label="Paper orientation">
-      <button type="button" id="portraitButton" aria-pressed="true">Portrait</button>
-      <button type="button" id="landscapeButton" aria-pressed="false">Landscape</button>
-    </div>
-    <div class="button-group" role="group" aria-label="Theme">
-      <button type="button" id="darkThemeButton" aria-pressed="true">Dark Theme</button>
-      <button type="button" id="lightThemeButton" aria-pressed="false">Light Theme</button>
-    </div>
-    <button type="button" id="adjustMapButton" aria-pressed="true" aria-label="Lock the print map extent" title="Drag to pan and scroll to zoom">Lock map</button>
-    <label class="check-label"><input type="checkbox" id="gridToggle" checked> Coordinate grid</label>
-    <div class="button-group export-group" role="group" aria-label="Export map">
-      <button type="button" class="print-button" id="printButton">Export PDF</button>
-      <button type="button" id="exportPNGButton">Export PNG</button>
-      <button type="button" id="exportJPGButton">Export JPG</button>
-      <button type="button" id="nativePrintButton">Print</button>
-    </div>
-    <span id="layoutStatus" role="status" aria-live="polite"></span>
-  </header>
-  <main class="paper-wrap">
-    <article id="paper" class="a4-portrait">
-      <header class="title-block">
-        <div><p class="eyebrow">CARTOGRAPHIC MAP</p><h1 id="layoutTitle">Map</h1></div>
-        <div class="title-meta"><span>Prepared by <b id="layoutAuthor">—</b></span><span>Created <b id="layoutDate">—</b></span></div>
-      </header>
-      <section class="map-frame" aria-label="Printable map">
-        <div id="printMap"></div>
-        <div class="north-arrow" aria-label="North arrow"><span id="northArrow">↑</span><b>N</b></div>
-        <div class="map-scale" id="mapScale"></div>
-        <div class="graticule-label graticule-top" id="gridTop"></div>
-        <div class="graticule-label graticule-bottom" id="gridBottom"></div>
-      </section>
-      <footer class="map-footer">
-        <section class="legend-block"><h2>Legend</h2><div id="legendItems" class="legend-items"></div></section>
-        <section class="inset-block"><h2>Inset Map</h2><div id="insetMap"></div><p id="extentText"></p></section>
-        <section class="map-notes"><h2>Map information</h2><p id="centerText"></p><p id="zoomText"></p><p>Coordinate system: WGS 84 · EPSG:4326</p><p class="attribution" id="attributionText"></p></section>
-      </footer>
-    </article>
-  </main>
-  <script src="https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/georaster@1.6.0/dist/georaster.browser.bundle.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
-  <script src="{% static 'js/print-layout.js' %}?v=20261006-interactive-export"></script>
-</body>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Print Map Layout | DISASTER WEBGIS</title>
+    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.css">
+    <link rel="stylesheet" href="{% static 'css/print-layout.css' %}?v=20261007-update1">
+  </head>
+  <body>
+    <header class="no-print toolbar">
+      <a class="back-link" href="/">← Back to map</a>
+      <label>Map title <input id="layoutTitleInput" type="text" maxlength="140" value="Map"></label>
+      <label>Prepared by <input id="authorInput" type="text" maxlength="100" placeholder="Name or organization"></label>
+      <div class="button-group" role="group" aria-label="Paper orientation">
+        <button type="button" id="portraitButton" aria-pressed="true">Portrait</button>
+        <button type="button" id="landscapeButton" aria-pressed="false">Landscape</button>
+      </div>
+      <div class="button-group" role="group" aria-label="Theme">
+        <button type="button" id="darkThemeButton" aria-pressed="true">Dark Theme</button>
+        <button type="button" id="lightThemeButton" aria-pressed="false">Light Theme</button>
+      </div>
+      <button type="button" id="adjustMapButton" aria-pressed="true" aria-label="Lock the print map extent" title="Drag to pan and scroll to zoom">Lock map</button>
+      <label class="check-label"><input type="checkbox" id="gridToggle" checked> Coordinate grid</label>
+      <div class="button-group export-group" role="group" aria-label="Export map">
+        <button type="button" class="print-button" id="printButton">Export PDF</button>
+        <button type="button" id="exportPNGButton">Export PNG</button>
+        <button type="button" id="exportJPGButton">Export JPG</button>
+        <button type="button" id="nativePrintButton">Print</button>
+      </div>
+      <span id="layoutStatus" role="status" aria-live="polite"></span>
+    </header>
+    <main class="paper-wrap">
+      <article id="paper" class="a4-portrait">
+        <header class="title-block">
+          <div><p class="eyebrow">LOCATION OVERVIEW</p><h1 id="layoutTitle">Map</h1></div>
+          <div class="title-meta"><span>Prepared by <b id="layoutAuthor">—</b></span><span>Created <b id="layoutDate">—</b></span></div>
+        </header>
+        <section class="map-frame" aria-label="Printable map" style="overflow: visible;">
+          <!-- Full-size Map Container -->
+          <div id="printMap" style="width: 100%; height: 100%;"></div>
+
+          <!-- Left Latitude Labels (Positioned Outside) -->
+          <div id="latLabelsContainer" class="coordinate-labels-left"></div>
+
+          <!-- Bottom Longitude Labels (Positioned Outside) -->
+          <div id="lonLabelsContainer" class="coordinate-labels-bottom"></div>
+
+          <div class="north-arrow" aria-label="North arrow"><span id="northArrow">↑</span><b>N</b></div>
+          <div class="map-scale" id="mapScale"></div>
+        </section>
+        <footer class="map-footer">
+          <section class="legend-block"><h2>Legend</h2><div id="legendItems" class="legend-items"></div></section>
+          <section class="inset-block"><h2>Inset Map</h2><div id="insetMap"></div><p id="extentText"></p></section>
+          <section class="map-notes"><h2>Map information</h2><p id="centerText"></p><p id="zoomText"></p><p>Coordinate system: WGS 84 · EPSG:4326</p><p class="attribution" id="attributionText"></p></section>
+        </footer>
+      </article>
+    </main>
+    <script src="https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/georaster@1.6.0/dist/georaster.browser.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
+    <script src="{% static 'js/print-layout.js' %}?v=20261006-fix"></script>
+  </body>
 </html>

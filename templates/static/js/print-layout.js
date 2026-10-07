@@ -70,7 +70,7 @@
     preserveDrawingBuffer: true
   });
 
-  map.addControl(new maplibregl.ScaleControl({ maxWidth: 200, unit: 'metric' }), 'bottom-left');
+  map.addControl(new maplibregl.ScaleControl({ maxWidth: 150, unit: 'metric' }), 'top-right');
   const interactionControls = [map.dragPan, map.scrollZoom, map.dragRotate, map.doubleClickZoom, map.keyboard, map.touchZoomRotate, map.touchPitch];
   function setMapAdjustmentEnabled(enabled) {
     interactionControls.forEach(control => enabled ? control?.enable() : control?.disable());
@@ -216,11 +216,48 @@
     const step = [1, 2, 5, 10].map(v => v * magnitude).find(v => v >= rawStep) || 10 * magnitude;
     
     const features = [];
+    const latContainer = $('latLabelsContainer');
+    const lonContainer = $('lonLabelsContainer');
+    
+    if (latContainer) latContainer.replaceChildren();
+    if (lonContainer) lonContainer.replaceChildren();
+
+    const mapContainer = $('printMap');
+    const containerWidth = mapContainer ? mapContainer.clientWidth : 0;
+    const containerHeight = mapContainer ? mapContainer.clientHeight : 0;
+
+    // 1. Generate Longitude Grids & Bottom Outer Labels
     for (let lon = Math.ceil(west / step) * step; lon <= east; lon += step) {
       features.push({ type: 'Feature', geometry: { type: 'LineString', coordinates: [[lon, south], [lon, north]] } });
+      
+      if (lonContainer && containerWidth > 0) {
+        const pixelX = map.project([lon, south]).x;
+        if (pixelX >= 0 && pixelX <= containerWidth) {
+          const label = document.createElement('div');
+          label.className = 'grid-label grid-label-lon';
+          label.style.left = `${(pixelX / containerWidth) * 100}%`;
+          const hem = lon >= 0 ? 'E' : 'W';
+          label.textContent = `${Math.abs(lon).toFixed(step < 1 ? 2 : 0)}°${hem}`;
+          lonContainer.appendChild(label);
+        }
+      }
     }
+
+    // 2. Generate Latitude Grids & Left Outer Labels
     for (let lat = Math.ceil(south / step) * step; lat <= north; lat += step) {
       features.push({ type: 'Feature', geometry: { type: 'LineString', coordinates: [[west, lat], [east, lat]] } });
+      
+      if (latContainer && containerHeight > 0) {
+        const pixelY = map.project([west, lat]).y;
+        if (pixelY >= 0 && pixelY <= containerHeight) {
+          const label = document.createElement('div');
+          label.className = 'grid-label grid-label-lat';
+          label.style.top = `${(pixelY / containerHeight) * 100}%`;
+          const hem = lat >= 0 ? 'N' : 'S';
+          label.textContent = `${Math.abs(lat).toFixed(step < 1 ? 2 : 0)}°${hem}`;
+          latContainer.appendChild(label);
+        }
+      }
     }
 
     const gridData = { type: 'FeatureCollection', features };
@@ -234,7 +271,7 @@
           type: 'line',
           source: 'print-grid',
           layout: { visibility: gridToggle?.checked ? 'visible' : 'none' },
-          paint: { 'line-color': '#52ff9a', 'line-width': 1.5, 'line-opacity': 0, 'line-dasharray': [2, 4] }
+          paint: { 'line-color': '#52ff9a', 'line-width': 1.5, 'line-opacity': 0.45, 'line-dasharray': [1, 2] }
         });
       }
     } else {
@@ -244,7 +281,7 @@
         type: 'line',
         source: 'print-grid',
         layout: { visibility: gridToggle?.checked ? 'visible' : 'none' },
-        paint: { 'line-color': '#52ff9a', 'line-width': 12.5, 'line-opacity': 0, 'line-dasharray': [2, 4] }
+        paint: { 'line-color': '#52ff9a', 'line-width': 1.5, 'line-opacity': 0.5, 'line-dasharray': [1, 2] }
       });
     }
 

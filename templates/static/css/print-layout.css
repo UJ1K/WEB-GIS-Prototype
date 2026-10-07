@@ -231,33 +231,74 @@ h1 { margin: 0; color: #f0f7f8; font-size: 23pt; line-height: 1.1; }
 .north-arrow span { font-size: 25pt; line-height: .85; transform-origin: center; }
 
 /* UPDATED: Fixes the default injected MapLibre/Mapbox white scale bar */
-.maplibregl-ctrl-scale {
-  background-color: rgba(2, 17, 26, 0.9) !important;
-  border: none !important;
-  
-  /* INCREASED: Thicker neon borders */
-  border-bottom: 3px solid var(--cyan) !important;
-  border-left: 3px solid var(--cyan) !important;
-  border-right: 3px solid var(--cyan) !important;
-  
+/* Style MapLibre attribution to match dark theme */
+.maplibregl-ctrl-attrib {
+  background-color: rgba(23, 41, 53, 0.9) !important;
   color: var(--text-main) !important;
-  
-  /* INCREASED: Larger padding and text size */
-  padding: 8px 14px !important; 
-  font-size: 15px !important; 
-  font-weight: 600 !important; 
-  
-  font-family: inherit !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important; 
-  line-height: 1.2 !important;
+  border-radius: 4px;
 }
 
-/* Base custom scale wrapper adjustments */
-.map-scale { 
-  position: absolute; 
-  z-index: 3; 
-  left: 8mm; /* INCREASED from 4mm */
-  bottom: 8mm; /* INCREASED from 4mm */
+/* Position MapLibre's top-right controls (like the scale bar) below the North Arrow */
+.maplibregl-ctrl-top-right {
+  top: 5mm !important; /* Adjust this distance depending on how tall your north arrow is */
+  right: 15mm !important;
+}
+
+/* Optional: Clean up the scale bar styling if needed at the top */
+.maplibregl-ctrl-scale {
+  position: relative !important;
+  background-color: rgba(2, 17, 26, 0.16) !important; /* Matches --panel */
+  border: 1px solid #1c323f71 !important;                /* Matches --line */
+  border-top: none !important;
+  border-left: none !important;
+  border-right: none !important;
+  border-bottom: 2px dashed var(--cyan) !important;    /* Dashed cyan accent line */
+  color: #ffffff !important;                           /* Fixed from font-color */
+  text-shadow: 0 1px 4px rgb(255, 255, 255);
+  padding: 4px 10px !important;
+  font-family: "Segoe UI", Roboto, Helvetica, sans-serif !important;
+  font-size: 12pt !important;
+  font-weight: 600 !important;                          /* Fixed invalid font-style: Bold */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.51) !important;
+  border-radius: 2px !important;
+  margin-top: 0 !important;
+}
+
+/* Left vertical tick mark */
+.maplibregl-ctrl-scale::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 2px;
+  height: 6px;
+  background-color: var(--cyan);
+}
+
+/* Right vertical tick mark */
+.maplibregl-ctrl-scale::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 2px;
+  height: 6px;
+  background-color: var(--cyan);
+}
+
+
+.map-container-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+/* Force MapLibre attribution to stay compact */
+.maplibregl-ctrl-attrib.maplibregl-compact {
+  display: block !important;
+}
+.maplibregl-ctrl-attrib-inner {
+  max-width: none !important;
 }
 
 .graticule-label { 
@@ -352,4 +393,80 @@ h1 { margin: 0; color: #f0f7f8; font-size: 23pt; line-height: 1.1; }
   #paper.a4-portrait { width: 210mm; height: 297mm; }
   
   .map-frame { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+}
+
+/* 1. Ensure map frame allows labels to overflow outside its borders */
+.map-frame { 
+  position: relative; 
+  min-height: 0; 
+  border: 1px solid #000; /* Main map border */
+  overflow: visible !important; /* CRITICAL: Allows numbers to sit outside */
+  background: #000; 
+}
+
+/* MapLibre canvas fills the frame completely */
+#printMap { 
+  position: absolute; 
+  inset: 0; 
+}
+
+/* 2. Push Left Latitude labels completely OUTSIDE the left border */
+.coordinate-labels-left {
+  position: absolute;
+  top: 0;
+  left: -35px; /* Pushes the column out to the left of the map */
+  width: 30px;
+  height: 100%;
+  pointer-events: none;
+  font-size: 10px;
+  color: #ffff;
+  font-family: sans-serif;
+  z-index: 4;
+}
+
+/* 2. Rotate the latitude labels 90 degrees */
+.grid-label-lat {
+  position: absolute;
+  right: 6px; /* Adjust distance slightly away from the border line */
+  transform: translateY(0%) translateX(50%) rotate(-90deg); 
+  transform-origin: center center;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* 3. Push Bottom Longitude labels completely OUTSIDE the bottom border */
+.coordinate-labels-bottom {
+  position: absolute;
+  bottom: -20px; /* Pushes the numbers out below the map */
+  left: 0;
+  width: 100%;
+  height: 25px;
+  pointer-events: none;
+  font-size: 10px;
+  color: #ffff;
+  font-family: sans-serif;
+  z-index: 4;
+}
+
+/* Label alignment styling */
+.grid-label {
+  position: absolute;
+  white-space: nowrap;
+  background: transparent !important;
+}
+
+/* 2. Rotate the latitude labels 90 degrees */
+.grid-label-lat {
+  position: absolute;
+  right: 5px;
+  transform: translateY(-80%) rotate(-90deg); /* Rotates text vertically */
+  transform-origin: right center;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.grid-label-lon {
+  bottom: 0;
+  transform: translateX(-50%);
+  text-align: center;
 }
