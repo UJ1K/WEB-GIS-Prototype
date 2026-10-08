@@ -154,6 +154,29 @@ body {
   border: 1px solid var(--line); 
 }
 
+/* Light theme is scoped to the printable A4 sheet; MapLibre styles stay untouched. */
+#paper.paper-light {
+  --panel: #ffffff;
+  --line: #aeb9bd;
+  --cyan: #42636b;
+  --text-main: #273b42;
+  --text-muted: #586b71;
+  color-scheme: light;
+  color: var(--text-main);
+  background: var(--panel);
+  border-color: var(--line);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, .18);
+}
+
+#paper.paper-light .title-block { border-color: var(--line); }
+#paper.paper-light .eyebrow,
+#paper.paper-light .map-footer h2 { color: #42636b; }
+#paper.paper-light h1,
+#paper.paper-light .title-meta b { color: #20343a; }
+#paper.paper-light .map-frame { border-color: #60747a; }
+#paper.paper-light .legend-symbol,
+#paper.paper-light #insetMap { border-color: var(--line); }
+
 .a4-portrait { width: 210mm; height: 297mm; grid-template-rows: auto minmax(0, 1fr) 43mm; }
 .a4-landscape { width: 297mm; height: 210mm; grid-template-rows: auto minmax(0, 1fr) 36mm; }
 

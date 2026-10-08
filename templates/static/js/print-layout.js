@@ -484,6 +484,14 @@
 
   // --- 7. Event Binding & Bootstrapping ---
   $('portraitButton').addEventListener('click', () => setOrientation('portrait'));$('landscapeButton').addEventListener('click', () => setOrientation('landscape'));
+  function setPaperTheme(theme) {
+    const light = theme === 'light';
+    $('paper').classList.toggle('paper-light', light);
+    $('darkThemeButton').setAttribute('aria-pressed', String(!light));
+    $('lightThemeButton').setAttribute('aria-pressed', String(light));
+  }
+  $('darkThemeButton').addEventListener('click', () => setPaperTheme('dark'));
+  $('lightThemeButton').addEventListener('click', () => setPaperTheme('light'));
   $('adjustMapButton').addEventListener('click', () => setMapAdjustmentEnabled($('adjustMapButton').getAttribute('aria-pressed') !== 'true'));
   $('printButton').addEventListener('click', () => exportDocument('pdf'));$('exportPNGButton').addEventListener('click', () => exportDocument('png'));
   $('exportJPGButton').addEventListener('click', () => exportDocument('jpg'));$('gridToggle').addEventListener('change', (e) => {
