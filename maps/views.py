@@ -21,6 +21,10 @@ from django.db import DatabaseError, transaction
 from .models import GeoDataset, MapFeature
 
 
+def home(request):
+    return render(request, "maps/home.html")
+
+
 def map_view(request):
     supabase_url = os.getenv("SUPABASE_URL", "").rstrip("/")
     return render(request, "maps/map.html", {"supabase_url": supabase_url})

@@ -81,6 +81,8 @@
   setMapAdjustmentEnabled(true);
   let resolveMapReady;
   const mapReady = new Promise(resolve => { resolveMapReady = resolve; });
+  let resolveInsetReady;
+  const insetReady = new Promise(resolve => { resolveInsetReady = resolve; });
   let resolveLayersReady;
   const layersReady = new Promise(resolve => { resolveLayersReady = resolve; });
 
@@ -335,25 +337,30 @@
     await waitUntilReady(mapReady);
     await waitUntilReady(layersReady);
     map.resize();
+    insetMap.resize();
+
+    await waitUntilReady(insetReady);
+    if (insetMap.isStyleLoaded()) updateInsetExtent();
 
     if (!map.loaded() || !map.areTilesLoaded()) {
-      await new Promise((resolve, reject) => {
-        function onMapIdle() {
+      await new Promise(resolve => {
+        let settled = false;
+        const finish = () => {
+          if (settled) return;
+          settled = true;
           clearTimeout(timeout);
+          map.off('idle', finish);
           resolve();
-        }
-
-        const timeout = setTimeout(() => {
-          map.off('idle', onMapIdle);
-          reject(new Error('The map is still loading. Wait for it to finish, then export again.'));
-        }, 15000);
-
-        map.once('idle', onMapIdle);
+        };
+        const timeout = setTimeout(finish, 5000);
+        map.once('idle', finish);
+        if (map.loaded() && map.areTilesLoaded()) finish();
       });
     }
 
     // 1. Force MapLibre to render a fresh frame
     map.triggerRepaint();
+    insetMap.triggerRepaint();
 
     // 2. CRITICAL: Grab the canvas and dataURL IMMEDIATELY (synchronously) 
     // before any 'await' yields the thread and clears the WebGL buffer.
@@ -377,6 +384,36 @@
     snapshot.src = dataUrl;
     await snapshot.decode();
     canvas.style.visibility = 'hidden';
+
+    // html2canvas does not reliably copy WebGL canvases. Capture the inset separately.
+    if (!insetMap.loaded() || !insetMap.areTilesLoaded()) {
+      await new Promise(resolve => {
+        let settled = false;
+        const finish = () => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timeout);
+          insetMap.off('idle', finish);
+          resolve();
+        };
+        const timeout = setTimeout(finish, 5000);
+        insetMap.once('idle', finish);
+        if (insetMap.loaded() && insetMap.areTilesLoaded()) finish();
+      });
+    }
+    insetMap.triggerRepaint();
+    const insetCanvas = insetMap.getCanvas();
+    let insetSnapshot = $('insetSnapshot');
+    if (!insetSnapshot) {
+      insetSnapshot = document.createElement('img');
+      insetSnapshot.id = 'insetSnapshot';
+      insetSnapshot.alt = 'Inset map overview';
+      Object.assign(insetSnapshot.style, { position: 'absolute', inset: '0', zIndex: '1', width: '100%', height: '100%', objectFit: 'fill' });
+      $('insetMap').append(insetSnapshot);
+    }
+    insetSnapshot.src = insetCanvas.toDataURL('image/png');
+    await insetSnapshot.decode();
+    insetCanvas.style.visibility = 'hidden';
   }
 
   async function preparePrintCanvas() {
@@ -472,6 +509,9 @@
     map.getCanvas().style.visibility = '';
     if ($('printSnapshot')) $('printSnapshot').remove();
     map.resize();
+    insetMap.getCanvas().style.visibility = '';
+    if ($('insetSnapshot')) $('insetSnapshot').remove();
+    insetMap.resize();
   });
 
   let gridDebounce;
@@ -517,6 +557,11 @@
     } finally {
       resolveLayersReady();
     }
+  });
+
+  insetMap.once('load', () => {
+    resolveInsetReady();
+    updateInsetExtent();
   });
 
   setOrientation('portrait');

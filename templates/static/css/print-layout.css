@@ -399,9 +399,9 @@ h1 { margin: 0; color: #f0f7f8; font-size: 23pt; line-height: 1.1; }
 .map-frame { 
   position: relative; 
   min-height: 0; 
-  border: 1px solid #000; /* Main map border */
+  border: 1px solid #ffffff; /* Main map border */
   overflow: visible !important; /* CRITICAL: Allows numbers to sit outside */
-  background: #000; 
+  background: #ffffff; 
 }
 
 /* MapLibre canvas fills the frame completely */

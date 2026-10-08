@@ -1,0 +1,56 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#02111a">
+  <meta name="description" content="Explore disaster risks, preparedness guidance, and geospatial tools for resilient communities.">
+  <title>Disaster Readiness</title>
+  <link rel="preconnect" href="https://images.unsplash.com">
+  <link rel="stylesheet" href="{% static 'css/home.css' %}">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="{% url 'maps:home' %}" aria-label="Resilience Atlas home"><span class="brand-mark" aria-hidden="true">◎</span><span>READINESS<span class="brand-light">DISASTER</span></span></a>
+    <nav class="main-nav" aria-label="Main navigation"><a class="active" href="#hazards">Explore</a><a href="#preparedness">Preparedness</a><a href="#about">About</a></nav>
+    <div class="header-actions">
+      <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to light theme" aria-pressed="false"><span class="theme-toggle-icon" aria-hidden="true">☼</span><span class="theme-toggle-label">Light theme</span></button>
+      <a class="header-cta" href="{% url 'maps:map' %}">Open live map <span aria-hidden="true">↗</span></a>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-image" role="img" aria-label="Mountain landscape beneath dramatic storm clouds"></div>
+      <div class="hero-shade"></div>
+      <div class="hero-copy">
+        <p class="eyebrow"><span></span> KNOW THE RISK. BUILD RESILIENCE.</p>
+        <h1 id="hero-title">A clearer view<br>of a <em>safer future.</em></h1>
+        <p class="hero-intro">Explore the forces that shape our landscapes, understand the risks where we live, and find practical ways to prepare.</p>
+        <div class="hero-actions"><a class="button button-light" href="#hazards">Explore disaster themes <span>↓</span></a><a class="text-link" href="{% url 'maps:map' %}"><span class="play-icon">↗</span> Open the live map</a></div>
+      </div>
+      <div class="hero-note"><span class="note-line"></span><span>INSIGHT FOR<br>RESILIENT COMMUNITIES</span></div>
+      <div class="hero-index"><span>01</span><span class="index-track"></span><span>04</span></div>
+      <div class="hero-caption"><span>01 / 04</span><span>LANDSCAPES IN MOTION</span></div>
+    </section>
+
+    <section class="themes section-wrap" id="hazards">
+      <div class="section-heading"><div><p class="eyebrow eyebrow-dark">EXPLORE THE LANDSCAPE</p><h2>Four forces. <em>One shared future.</em></h2></div><p class="section-intro">Every place faces its own challenges. Start with the hazards that matter most to your community.</p></div>
+      <div class="theme-grid">
+        <a class="theme-card flood" href="{% url 'maps:map' %}?theme=flood"><span class="card-number">01 / WATER</span><span class="card-content"><span class="card-title">Flood</span><span class="card-desc">Follow the water. Understand exposure and prepare for rising levels.</span><span class="card-link">Explore flood risk <b>↗</b></span></span></a>
+        <a class="theme-card drought" href="{% url 'maps:map' %}?theme=drought"><span class="card-number">02 / DROUGHT</span><span class="card-content"><span class="card-title">Drought</span><span class="card-desc">Learn how drought affects communities and how to build resilience.</span><span class="card-link">Explore drought risk <b>↗</b></span></span></a>
+        <a class="theme-card landslide" href="{% url 'maps:map' %}?theme=landslide"><span class="card-number">03 / TERRAIN</span><span class="card-content"><span class="card-title">Landslide</span><span class="card-desc">See how slopes, rainfall, and land use interact.</span><span class="card-link">Explore slope risk <b>↗</b></span></span></a>
+        <a class="theme-card wildfire" href="{% url 'maps:map' %}?theme=wildfire"><span class="card-number">04 / WILDLAND</span><span class="card-content"><span class="card-title">Wildfire</span><span class="card-desc">Understand fire-prone landscapes and ways to reduce risk.</span><span class="card-link">Explore fire risk <b>↗</b></span></span></a>
+      </div>
+    </section>
+
+    <section class="preparedness" id="preparedness"><div class="preparedness-photo" role="img" aria-label="Sunlight falling across a forested mountain range"></div><div class="preparedness-copy"><p class="eyebrow">PREPAREDNESS STARTS HERE</p><h2>Knowledge is a<br><em>powerful first step.</em></h2><p>Build a better picture of your local risks. Explore the map, review the basics, and make a plan with the people around you.</p><a class="button button-outline" href="{% url 'maps:map' %}">Explore the live map <span>↗</span></a></div></section>
+
+    <section class="about section-wrap" id="about"><p class="eyebrow eyebrow-dark">BUILT FOR A CHANGING WORLD</p><div class="about-row"><h2>See the bigger picture.<br><em>Act on what matters.</em></h2><p>Resilience Atlas brings disaster themes and geospatial tools together to support better awareness, planning, and stronger communities.</p><a class="round-link" href="{% url 'maps:map' %}" aria-label="Open map">↗</a></div></section>
+  </main>
+
+  <footer class="site-footer"><a class="brand" href="{% url 'maps:home' %}"><span class="brand-mark" aria-hidden="true">◎</span><span>READINESS<span class="brand-light">DISASTER</span></span></a><span>Clearer insight. Stronger communities.</span><a href="{% url 'maps:map' %}">Open live map ↗</a></footer>
+  <script src="{% static 'js/home.js' %}" defer></script>
+</body>
+</html>
