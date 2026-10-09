@@ -54,7 +54,7 @@
     zoom: state.zoom,
     bearing: state.bearing || 0,
     pitch: state.pitch || 0,
-    attributionControl: true,
+    attributionControl: false,
     preserveDrawingBuffer: true,
     interactive: true,
     renderWorldCopies: false
@@ -140,9 +140,33 @@
     });
   }
 
+  function addRasterBasemap(targetMap, idPrefix) {
+    if (state.basemap === 'satellite') {
+      const sourceId = `${idPrefix}-satellite`;
+      const layerId = `${sourceId}-layer`;
+      if (!targetMap.getSource(sourceId)) {
+        targetMap.addSource(sourceId, {
+          type: 'raster',
+          tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+          tileSize: 256
+        });
+      }
+      if (!targetMap.getLayer(layerId)) targetMap.addLayer({ id: layerId, type: 'raster', source: sourceId });
+    } else if (state.basemap === 'bright') {
+      const sourceId = `${idPrefix}-voyager`;
+      const layerId = `${sourceId}-layer`;
+      if (!targetMap.getSource(sourceId)) {
+        targetMap.addSource(sourceId, { type: 'raster', tiles: ['/tiles/carto-voyager/voyager/{z}/{x}/{y}.png'], tileSize: 256 });
+      }
+      if (!targetMap.getLayer(layerId)) targetMap.addLayer({ id: layerId, type: 'raster', source: sourceId });
+    }
+  }
+
   // --- 4. Layer Restoration ---
   async function restoreDataLayers() {
     const activeKeys = new Set((state.layers || []).map(layer => layer.key));
+    // Add basemap tiles first so restored user data and raster overlays stay above them.
+    addRasterBasemap(map, 'print');
 
     if (state.drawnFeatures?.length) {
       map.addSource('print-drawings', { type: 'geojson', data: { type: 'FeatureCollection', features: state.drawnFeatures } });
@@ -194,14 +218,6 @@
       });
     }
 
-    const targetLayer = map.getStyle().layers?.find(layer => layer.type === 'symbol')?.id;
-    if (state.basemap === 'satellite') {
-      map.addSource('print-satellite', { type: 'raster', tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'], tileSize: 256 });
-      map.addLayer({ id: 'print-satellite-layer', type: 'raster', source: 'print-satellite' }, targetLayer);
-    } else if (state.basemap === 'bright') {
-      map.addSource('print-voyager', { type: 'raster', tiles: ['/tiles/carto-voyager/voyager/{z}/{x}/{y}.png'], tileSize: 256 });
-      map.addLayer({ id: 'print-voyager-layer', type: 'raster', source: 'print-voyager' }, targetLayer);
-    }
   }
 
   // --- 5. Cartographic Grids & Overlays ---
@@ -473,18 +489,68 @@
   function setOrientation(orientation) {
     const isLandscape = orientation === 'landscape';
     const bounds = map.getBounds();
-    $('paper').classList.toggle('a4-landscape', isLandscape);$('paper').classList.toggle('a4-portrait', !isLandscape);
-    $('portraitButton').setAttribute('aria-pressed', String(!isLandscape));$('landscapeButton').setAttribute('aria-pressed', String(isLandscape));
+    const paper = $('paper');
+    const useReferenceLayout = paper.classList.contains('layout-style-2');
+    paper.classList.toggle('a4-landscape', isLandscape);paper.classList.toggle('a4-portrait', !isLandscape);
+    paper.classList.toggle('layout-landscape', useReferenceLayout && isLandscape);
+    paper.classList.toggle('layout-portrait', useReferenceLayout && !isLandscape);
+    document.documentElement.style.setProperty('--print-orientation', isLandscape ? 'landscape' : 'portrait');
+    let orientationStyle = $('printOrientationStyle');
+    if (!orientationStyle) {
+      orientationStyle = document.createElement('style');
+      orientationStyle.id = 'printOrientationStyle';
+      document.head.append(orientationStyle);
+    }
+    orientationStyle.textContent = `@media print { @page { size: A4 ${isLandscape ? 'landscape' : 'portrait'}; margin: 0; } }`;
+    $('orientationPortraitButton').setAttribute('aria-pressed', String(!isLandscape));
+    $('orientationLandscapeButton').setAttribute('aria-pressed', String(isLandscape));
     
     map.resize(); 
     insetMap.resize();
     
     if (map.loaded()) map.fitBounds(bounds, { padding: 0, animate: false });
     updateMapMetrics();
+    renderCoordinateGrid();
+    updateInsetConnector();
+  }
+
+  function updateInsetConnector() {
+    const paper = $('paper');
+    if (!paper.classList.contains('layout-style-2')) return;
+    const mapRect = $('printMap').getBoundingClientRect();
+    const insetRect = $('insetMap').getBoundingClientRect();
+    const paperRect = paper.getBoundingClientRect();
+    const line = $('insetConnectorLine');
+    if (!mapRect.width || !insetRect.width || !paperRect.width) return;
+
+    const landscape = paper.classList.contains('layout-landscape');
+    const start = landscape
+      ? { x: mapRect.left, y: mapRect.top + mapRect.height * 0.68 }
+      : { x: mapRect.left + mapRect.width * 0.52, y: mapRect.bottom };
+    const end = landscape
+      ? { x: insetRect.right, y: insetRect.top + insetRect.height * 0.45 }
+      : { x: insetRect.left, y: insetRect.top };
+    line.setAttribute('x1', String(start.x - paperRect.left));
+    line.setAttribute('y1', String(start.y - paperRect.top));
+    line.setAttribute('x2', String(end.x - paperRect.left));
+    line.setAttribute('y2', String(end.y - paperRect.top));
+    $('insetConnector').setAttribute('viewBox', `0 0 ${paper.clientWidth} ${paper.clientHeight}`);
   }
 
   // --- 7. Event Binding & Bootstrapping ---
-  $('portraitButton').addEventListener('click', () => setOrientation('portrait'));$('landscapeButton').addEventListener('click', () => setOrientation('landscape'));
+  $('layoutStyle1Button').addEventListener('click', () => setLayoutStyle(1));
+  $('layoutStyle2Button').addEventListener('click', () => setLayoutStyle(2));
+  $('orientationPortraitButton').addEventListener('click', () => setOrientation('portrait'));
+  $('orientationLandscapeButton').addEventListener('click', () => setOrientation('landscape'));
+  function setLayoutStyle(style) {
+    const useReferenceLayout = style === 2;
+    $('paper').classList.toggle('layout-style-2', useReferenceLayout);
+    $('layoutStyle1Button').setAttribute('aria-pressed', String(!useReferenceLayout));
+    $('layoutStyle2Button').setAttribute('aria-pressed', String(useReferenceLayout));
+    $('authorLabel').textContent = useReferenceLayout ? 'Created by' : 'Prepared by';
+    $('dateLabel').textContent = useReferenceLayout ? 'Date Created' : 'Created';
+    setOrientation($('paper').classList.contains('a4-landscape') ? 'landscape' : 'portrait');
+  }
   function setPaperTheme(theme) {
     const light = theme === 'light';
     $('paper').classList.toggle('paper-light', light);
@@ -536,7 +602,10 @@
       updateInsetExtent();
     }
     updateMapMetrics();
+    updateInsetConnector();
   });
+
+  window.addEventListener('resize', updateInsetConnector);
 
   map.once('load', async () => {
     resolveMapReady();
@@ -557,6 +626,7 @@
     try {
       await restoreDataLayers();
       renderCoordinateGrid();
+      updateInsetConnector();
       
       // FIXED: Ensure inset map is fully loaded before drawing extent polygon
       if (insetMap.loaded()) {
@@ -573,7 +643,10 @@
 
   insetMap.once('load', () => {
     resolveInsetReady();
+    addRasterBasemap(insetMap, 'print-inset');
     updateInsetExtent();
+    insetMap.triggerRepaint();
+    updateInsetConnector();
   });
 
   setOrientation('portrait');

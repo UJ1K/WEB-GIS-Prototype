@@ -145,6 +145,7 @@ body {
 }
 
 #paper { 
+  position: relative;
   margin: 0 auto; 
   display: grid; 
   gap: 5mm; 
@@ -494,6 +495,29 @@ h1 { margin: 0; color: #f0f7f8; font-size: 23pt; line-height: 1.1; }
   text-align: center;
 }
 
+/* The reference layout places longitude labels above and latitude labels right of the map. */
+#paper.layout-style-2 .coordinate-labels-left {
+  left: auto;
+  right: -35px;
+}
+
+#paper.layout-style-2 .coordinate-labels-bottom {
+  top: -20px;
+  bottom: auto;
+}
+
+#paper.layout-style-2 .coordinate-labels-left .grid-label-lat {
+  right: auto;
+  left: 5px;
+  transform: translateY(-80%) rotate(90deg);
+  transform-origin: left center;
+}
+
+#paper.layout-style-2 .grid-label-lon {
+  top: 0;
+  bottom: auto;
+}
+
 /* Keep map edge labels readable against the light paper, without recoloring the map. */
 #paper.paper-light .coordinate-labels-left,
 #paper.paper-light .coordinate-labels-bottom {
@@ -519,4 +543,142 @@ h1 { margin: 0; color: #f0f7f8; font-size: 23pt; line-height: 1.1; }
 #paper.paper-light .maplibregl-ctrl-scale::before,
 #paper.paper-light .maplibregl-ctrl-scale::after {
   background-color: #000000;
+}
+
+/* Reference layout, portrait: map above the title, credits, and inset strip. */
+#paper.layout-portrait {
+  grid-template-columns: minmax(0, 1fr) 37mm 49mm;
+  grid-template-rows: minmax(0, 1fr) 42mm;
+  gap: 3mm 4mm;
+  padding: 7mm;
+}
+
+#paper.layout-portrait .title-block,
+#paper.layout-portrait .map-footer,
+#paper.layout-landscape .title-block,
+#paper.layout-landscape .map-footer {
+  display: contents;
+}
+
+#paper.layout-portrait .map-frame {
+  grid-column: 1 / 4;
+  grid-row: 1;
+}
+
+#paper.layout-portrait .title-block > div:first-child {
+  grid-column: 1;
+  grid-row: 2;
+  align-self: center;
+  display: flex;
+  flex-direction: column;
+}
+
+#paper.layout-portrait .title-block .eyebrow { order: 2; margin: 1mm 0 0; }
+#paper.layout-portrait h1 { order: 1; font-size: 22pt; }
+
+#paper.layout-portrait .title-meta {
+  grid-column: 2;
+  grid-row: 2;
+  align-self: center;
+  min-width: 0;
+  font-size: 7pt;
+}
+
+#paper.layout-portrait .inset-block {
+  grid-column: 3;
+  grid-row: 2;
+  align-self: center;
+}
+
+#paper.layout-portrait #insetMap { height: 31mm; }
+#paper.layout-portrait #extentText,
+#paper.layout-portrait .map-notes { display: none; }
+
+#paper.layout-portrait .legend-block {
+  position: absolute;
+  z-index: 4;
+  left: 7mm;
+  bottom: 52mm;
+  width: 62mm;
+  min-height: 24mm;
+  padding: 2mm;
+  border: 1px solid #45545b;
+  background: rgba(255, 255, 255, .78);
+  color: #111;
+}
+
+#paper.layout-portrait .legend-block h2 { color: #17262c; }
+#paper.layout-portrait .legend-item { color: #17262c; }
+#paper.layout-portrait .north-arrow { top: auto; right: 2mm; bottom: 3mm; }
+#paper.layout-portrait .maplibregl-ctrl-top-right { top: auto !important; right: 17mm !important; bottom: 2mm !important; }
+
+/* Layout Style 2: full-height map at right, information column at left. */
+#paper.layout-landscape {
+  grid-template-columns: 44mm minmax(0, 1fr);
+  grid-template-rows: 30mm minmax(35mm, 1fr) 26mm 43mm;
+  gap: 3mm 5mm;
+  padding: 6mm;
+}
+
+#paper.layout-landscape .map-frame {
+  grid-column: 2;
+  grid-row: 1 / 5;
+}
+
+#paper.layout-landscape .title-block > div:first-child {
+  grid-column: 1;
+  grid-row: 1;
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+}
+
+#paper.layout-landscape .title-block .eyebrow { order: 1; margin: 0 0 1mm; }
+#paper.layout-landscape h1 { order: 2; font-size: 25pt; line-height: 1.05; overflow-wrap: anywhere; }
+
+#paper.layout-landscape .legend-block {
+  grid-column: 1;
+  grid-row: 2;
+  min-height: 0;
+  padding: 2mm;
+  border: 1px solid currentColor;
+  overflow: hidden;
+}
+
+#paper.layout-landscape .title-meta {
+  grid-column: 1;
+  grid-row: 3;
+  align-self: center;
+  min-width: 0;
+  font-size: 7pt;
+}
+
+#paper.layout-landscape .inset-block {
+  grid-column: 1;
+  grid-row: 4;
+  align-self: stretch;
+}
+
+#paper.layout-landscape .inset-block h2 { text-align: left; }
+#paper.layout-landscape #insetMap { height: 34mm; }
+#paper.layout-landscape #extentText,
+#paper.layout-landscape .map-notes { display: none; }
+#paper.layout-landscape .north-arrow { top: 2mm; right: 2mm; }
+#paper.layout-landscape .maplibregl-ctrl-top-right { top: 2mm !important; right: 17mm !important; }
+
+.inset-connector {
+  display: none;
+  position: absolute;
+  z-index: 8;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+#paper.layout-style-2 .inset-connector { display: block; }
+
+@media print {
+  #paper.layout-portrait .legend-block { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
 }

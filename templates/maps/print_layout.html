@@ -6,20 +6,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Print Map Layout | DISASTER WEBGIS</title>
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.css">
-    <link rel="stylesheet" href="{% static 'css/print-layout.css' %}?v=20261009-paper-theme2">
+    <link rel="stylesheet" href="{% static 'css/print-layout.css' %}?v=20261009-layout-styles2">
   </head>
   <body>
     <header class="no-print toolbar">
       <a class="back-link" href="/">← Back to map</a>
       <label>Map title <input id="layoutTitleInput" type="text" maxlength="140" value="Map"></label>
       <label>Prepared by <input id="authorInput" type="text" maxlength="100" placeholder="Name or organization"></label>
-      <div class="button-group" role="group" aria-label="Paper orientation">
-        <button type="button" id="portraitButton" aria-pressed="true">Portrait</button>
-        <button type="button" id="landscapeButton" aria-pressed="false">Landscape</button>
-      </div>
       <div class="button-group" role="group" aria-label="Layout Style">
-        <button type="button" id="portraitButton" aria-pressed="true">Layout Style 1</button>
-        <button type="button" id="landscapeButton" aria-pressed="false">Layout Style 2</button>
+        <button type="button" id="layoutStyle1Button" aria-pressed="true">Layout Style 1</button>
+        <button type="button" id="layoutStyle2Button" aria-pressed="false">Layout Style 2</button>
+      </div>
+      <div class="button-group" role="group" aria-label="Paper orientation">
+        <button type="button" id="orientationPortraitButton" aria-pressed="true">Portrait</button>
+        <button type="button" id="orientationLandscapeButton" aria-pressed="false">Landscape</button>
       </div>
       <div class="button-group" role="group" aria-label="Theme">
         <button type="button" id="darkThemeButton" aria-pressed="true">Dark Theme</button>
@@ -39,7 +39,7 @@
       <article id="paper" class="a4-portrait">
         <header class="title-block">
           <div><p class="eyebrow">LOCATION OVERVIEW</p><h1 id="layoutTitle">Map</h1></div>
-          <div class="title-meta"><span>Prepared by <b id="layoutAuthor">—</b></span><span>Created <b id="layoutDate">—</b></span></div>
+          <div class="title-meta"><span><span id="authorLabel">Prepared by</span> <b id="layoutAuthor">—</b></span><span><span id="dateLabel">Created</span> <b id="layoutDate">—</b></span></div>
         </header>
         <section class="map-frame" aria-label="Printable map" style="overflow: visible;">
           <!-- Full-size Map Container -->
@@ -59,12 +59,20 @@
           <section class="inset-block"><h2>Inset Map</h2><div id="insetMap"></div><p id="extentText"></p></section>
           <section class="map-notes"><h2>Map information</h2><p id="centerText"></p><p id="zoomText"></p><p>Coordinate system: WGS 84 · EPSG:4326</p><p class="attribution" id="attributionText"></p></section>
         </footer>
+        <svg class="inset-connector" id="insetConnector" aria-hidden="true">
+          <defs>
+            <marker id="insetArrowHead" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto" markerUnits="strokeWidth">
+              <path d="M0,0 L0,6 L6,3 z" fill="#e53935"></path>
+            </marker>
+          </defs>
+          <line id="insetConnectorLine" x1="0" y1="0" x2="0" y2="0" stroke="#e53935" stroke-width="0.6" marker-end="url(#insetArrowHead)"></line>
+        </svg>
       </article>
     </main>
     <script src="https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/georaster@1.6.0/dist/georaster.browser.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
-    <script src="{% static 'js/print-layout.js' %}?v=20261009-paper-theme"></script>
+    <script src="{% static 'js/print-layout.js' %}?v=20261009-inset-basemap"></script>
   </body>
 </html>
