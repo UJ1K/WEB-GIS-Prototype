@@ -207,6 +207,7 @@
   // --- 5. Cartographic Grids & Overlays ---
   function renderCoordinateGrid() {
     if (!map.isStyleLoaded()) return;
+    const gridLineColor = $('paper').classList.contains('paper-light') ? '#000000' : '#52ff9a';
     const gridToggle = $('gridToggle');
     const bounds = map.getBounds();
     const [west, south, east, north] = [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()];
@@ -273,7 +274,7 @@
           type: 'line',
           source: 'print-grid',
           layout: { visibility: gridToggle?.checked ? 'visible' : 'none' },
-          paint: { 'line-color': '#52ff9a', 'line-width': 1.5, 'line-opacity': 0.45, 'line-dasharray': [1, 2] }
+          paint: { 'line-color': gridLineColor, 'line-width': 1.5, 'line-opacity': 0.45, 'line-dasharray': [1, 2] }
         });
       }
     } else {
@@ -283,7 +284,7 @@
         type: 'line',
         source: 'print-grid',
         layout: { visibility: gridToggle?.checked ? 'visible' : 'none' },
-        paint: { 'line-color': '#52ff9a', 'line-width': 1.5, 'line-opacity': 0.5, 'line-dasharray': [1, 2] }
+        paint: { 'line-color': gridLineColor, 'line-width': 1.5, 'line-opacity': 0.5, 'line-dasharray': [1, 2] }
       });
     }
 
@@ -489,6 +490,9 @@
     $('paper').classList.toggle('paper-light', light);
     $('darkThemeButton').setAttribute('aria-pressed', String(!light));
     $('lightThemeButton').setAttribute('aria-pressed', String(light));
+    if (map.getLayer('print-grid-lines')) {
+      map.setPaintProperty('print-grid-lines', 'line-color', light ? '#000000' : '#52ff9a');
+    }
   }
   $('darkThemeButton').addEventListener('click', () => setPaperTheme('dark'));
   $('lightThemeButton').addEventListener('click', () => setPaperTheme('light'));

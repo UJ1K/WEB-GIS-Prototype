@@ -493,3 +493,30 @@ h1 { margin: 0; color: #f0f7f8; font-size: 23pt; line-height: 1.1; }
   transform: translateX(-50%);
   text-align: center;
 }
+
+/* Keep map edge labels readable against the light paper, without recoloring the map. */
+#paper.paper-light .coordinate-labels-left,
+#paper.paper-light .coordinate-labels-bottom {
+  color: #20343a;
+}
+
+#paper.paper-light .map-frame {
+  border-color: #20343a;
+}
+
+#paper.paper-light .north-arrow {
+  color: #000000;
+  text-shadow: none;
+}
+
+#paper.paper-light .maplibregl-ctrl-scale {
+  color: #000000 !important;
+  text-shadow: none;
+  border-bottom-color: #000000 !important;
+  box-shadow: none !important;
+}
+
+#paper.paper-light .maplibregl-ctrl-scale::before,
+#paper.paper-light .maplibregl-ctrl-scale::after {
+  background-color: #000000;
+}
