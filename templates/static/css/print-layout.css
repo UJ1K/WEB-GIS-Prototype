@@ -458,8 +458,8 @@ h1 { margin: 0; color: #f0f7f8; font-size: 23pt; line-height: 1.1; }
 #paper.layout-portrait .title-block > div:first-child {
   grid-column: 1; grid-row: 2; align-self: center; display: flex; flex-direction: column;
 }
-#paper.layout-portrait .title-block .eyebrow { order: 2; margin: 1mm 0 0; }
-#paper.layout-portrait h1 { order: 1; font-size: 22pt; }
+#paper.layout-portrait .title-block .eyebrow { order: 2; margin: 1mm 0 0; font-size: 11.25pt; }
+#paper.layout-portrait h1 { order: 1; font-size: 31pt; }
 #paper.layout-portrait .title-meta { grid-column: 2; grid-row: 2; align-self: center; min-width: 0; font-size: 7pt; }
 #paper.layout-portrait .inset-block { grid-column: 3; grid-row: 2; align-self: center; }
 #paper.layout-portrait #insetMap { height: 31mm; }
