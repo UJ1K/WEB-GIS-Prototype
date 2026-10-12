@@ -61,9 +61,9 @@ body {
 
 .toolbar button, .back-link { 
   min-height: auto; 
-  padding: 9px 11px; 
+  padding: 10px 8px; 
   border: 1px solid var(--line); 
-  border-radius: 0; 
+  border-radius: 10px; 
   color: var(--text-main); 
   background: transparent; 
   font: inherit; 
@@ -71,6 +71,10 @@ body {
   text-decoration: none; 
   cursor: pointer; 
   display: flex; 
+  flex-direction: column;
+  gap: 7px;
+  min-height: 76px;
+  text-align: center;
   align-items: center; 
   justify-content: center; 
 }
@@ -86,31 +90,28 @@ body {
   border-color: var(--cyan); 
 }
 
-.button-group:not(.export-group) {
+.button-group {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
   width: 100%;
 }
 
-.button-group:not(.export-group) button {
+.button-group button {
   min-width: 0;
   min-height: 76px;
   margin: 0 !important;
   padding: 10px 6px;
-  flex-direction: column;
-  gap: 7px;
   border: 1px solid var(--line);
-  border-radius: 10px;
   color: var(--text-muted);
   background: #0a0a0a;
   transition: background-color .15s ease, border-color .15s ease, color .15s ease;
 }
 
-.button-group:not(.export-group) button + button { border-left: 1px solid var(--line); }
-.button-group:not(.export-group) button:hover { border-color: #35515d; }
-.button-group:not(.export-group) button[aria-pressed="true"] { background: #09314b; }
-.button-group:not(.export-group) button span { text-align: center; line-height: 1.2; }
+.button-group button + button { border-left: 1px solid var(--line); }
+.button-group button:hover { border-color: #35515d; }
+.button-group button[aria-pressed="true"] { background: #09314b; }
+.button-group button span { text-align: center; line-height: 1.2; }
 
 .orientation-icon,
 .theme-icon,
@@ -130,6 +131,13 @@ body {
 
 .export-group {
   margin-top: 10px;
+}
+
+.export-group button {
+  min-height: 64px;
+  padding: 8px 5px;
+  font-size: 10px;
+  overflow-wrap: anywhere;
 }
 
 .check-label input[type="checkbox"] { 
