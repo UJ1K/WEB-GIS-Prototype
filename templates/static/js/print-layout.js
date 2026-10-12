@@ -511,30 +511,6 @@
     if (map.loaded()) map.fitBounds(bounds, { padding: 0, animate: false });
     updateMapMetrics();
     renderCoordinateGrid();
-    updateInsetConnector();
-  }
-
-  function updateInsetConnector() {
-    const paper = $('paper');
-    if (!paper.classList.contains('layout-style-2')) return;
-    const mapRect = $('printMap').getBoundingClientRect();
-    const insetRect = $('insetMap').getBoundingClientRect();
-    const paperRect = paper.getBoundingClientRect();
-    const line = $('insetConnectorLine');
-    if (!mapRect.width || !insetRect.width || !paperRect.width) return;
-
-    const landscape = paper.classList.contains('layout-landscape');
-    const start = landscape
-      ? { x: mapRect.left, y: mapRect.top + mapRect.height * 0.68 }
-      : { x: mapRect.left + mapRect.width * 0.52, y: mapRect.bottom };
-    const end = landscape
-      ? { x: insetRect.right, y: insetRect.top + insetRect.height * 0.45 }
-      : { x: insetRect.left, y: insetRect.top };
-    line.setAttribute('x1', String(start.x - paperRect.left));
-    line.setAttribute('y1', String(start.y - paperRect.top));
-    line.setAttribute('x2', String(end.x - paperRect.left));
-    line.setAttribute('y2', String(end.y - paperRect.top));
-    $('insetConnector').setAttribute('viewBox', `0 0 ${paper.clientWidth} ${paper.clientHeight}`);
   }
 
   // --- 7. Event Binding & Bootstrapping ---
@@ -602,10 +578,7 @@
       updateInsetExtent();
     }
     updateMapMetrics();
-    updateInsetConnector();
   });
-
-  window.addEventListener('resize', updateInsetConnector);
 
   map.once('load', async () => {
     resolveMapReady();
@@ -626,7 +599,6 @@
     try {
       await restoreDataLayers();
       renderCoordinateGrid();
-      updateInsetConnector();
       
       // FIXED: Ensure inset map is fully loaded before drawing extent polygon
       if (insetMap.loaded()) {
@@ -646,7 +618,6 @@
     addRasterBasemap(insetMap, 'print-inset');
     updateInsetExtent();
     insetMap.triggerRepaint();
-    updateInsetConnector();
   });
 
   setOrientation('portrait');

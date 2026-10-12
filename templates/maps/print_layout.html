@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Print Map Layout | DISASTER WEBGIS</title>
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.css">
-    <link rel="stylesheet" href="{% static 'css/print-layout.css' %}?v=20261009-layout-styles2">
+    <link rel="stylesheet" href="{% static 'css/print-layout.css' %}?v=20261012-layout-theme-icons">
   </head>
   <body>
     <header class="no-print toolbar">
@@ -14,16 +14,34 @@
       <label>Map title <input id="layoutTitleInput" type="text" maxlength="140" value="Map"></label>
       <label>Prepared by <input id="authorInput" type="text" maxlength="100" placeholder="Name or organization"></label>
       <div class="button-group" role="group" aria-label="Layout Style">
-        <button type="button" id="layoutStyle1Button" aria-pressed="true">Layout Style 1</button>
-        <button type="button" id="layoutStyle2Button" aria-pressed="false">Layout Style 2</button>
+        <button type="button" class="layout-style-button" id="layoutStyle1Button" aria-pressed="true">
+          <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="layout-style-icon" aria-hidden="true"><rect width="7" height="18" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/></svg>
+          <span>Layout Style 1</span>
+        </button>
+        <button type="button" class="layout-style-button" id="layoutStyle2Button" aria-pressed="false">
+          <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="layout-style-icon" aria-hidden="true"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="4" rx="1"/><rect width="7" height="7" x="4" y="14" rx="1"/></svg>
+          <span>Layout Style 2</span>
+        </button>
       </div>
       <div class="button-group" role="group" aria-label="Paper orientation">
-        <button type="button" id="orientationPortraitButton" aria-pressed="true">Portrait</button>
-        <button type="button" id="orientationLandscapeButton" aria-pressed="false">Landscape</button>
+        <button type="button" class="orientation-button" id="orientationPortraitButton" aria-label="Portrait orientation" aria-pressed="true">
+          <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="orientation-icon" aria-hidden="true"><path d="M2 3v18"/><rect width="12" height="18" x="6" y="3" rx="2"/><path d="M22 3v18"/></svg>
+          <span>Portrait</span>
+        </button>
+        <button type="button" class="orientation-button" id="orientationLandscapeButton" aria-label="Landscape orientation" aria-pressed="false">
+          <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="orientation-icon" aria-hidden="true"><path d="M3 2h18"/><rect width="18" height="12" x="3" y="6" rx="2"/><path d="M3 22h18"/></svg>
+          <span>Landscape</span>
+        </button>
       </div>
       <div class="button-group" role="group" aria-label="Theme">
-        <button type="button" id="darkThemeButton" aria-pressed="true">Dark Theme</button>
-        <button type="button" id="lightThemeButton" aria-pressed="false">Light Theme</button>
+        <button type="button" class="theme-button" id="darkThemeButton" aria-pressed="true">
+          <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="theme-icon" aria-hidden="true"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
+          <span>Dark Theme</span>
+        </button>
+        <button type="button" class="theme-button" id="lightThemeButton" aria-pressed="false">
+          <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="theme-icon" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+          <span>Light Theme</span>
+        </button>
       </div>
       <button type="button" id="adjustMapButton" aria-pressed="true" aria-label="Lock the print map extent" title="Drag to pan and scroll to zoom">Lock map</button>
       <label class="check-label"><input type="checkbox" id="gridToggle" checked> Coordinate grid</label>
@@ -59,20 +77,12 @@
           <section class="inset-block"><h2>Inset Map</h2><div id="insetMap"></div><p id="extentText"></p></section>
           <section class="map-notes"><h2>Map information</h2><p id="centerText"></p><p id="zoomText"></p><p>Coordinate system: WGS 84 · EPSG:4326</p><p class="attribution" id="attributionText"></p></section>
         </footer>
-        <svg class="inset-connector" id="insetConnector" aria-hidden="true">
-          <defs>
-            <marker id="insetArrowHead" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto" markerUnits="strokeWidth">
-              <path d="M0,0 L0,6 L6,3 z" fill="#e53935"></path>
-            </marker>
-          </defs>
-          <line id="insetConnectorLine" x1="0" y1="0" x2="0" y2="0" stroke="#e53935" stroke-width="0.6" marker-end="url(#insetArrowHead)"></line>
-        </svg>
       </article>
     </main>
     <script src="https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/georaster@1.6.0/dist/georaster.browser.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
-    <script src="{% static 'js/print-layout.js' %}?v=20261009-inset-basemap"></script>
+    <script src="{% static 'js/print-layout.js' %}?v=20261012-no-inset-connector"></script>
   </body>
 </html>
