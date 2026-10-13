@@ -467,7 +467,7 @@ h2 em {
 }
 
 .preparedness-photo {
-  background-image: linear-gradient(90deg, rgba(2, 17, 26, 0.2), rgba(2, 17, 26, 0.55)), url('../supplement/pre-ready.jpg');
+  background-image: linear-gradient(90deg, rgba(2, 17, 26, 0.2), rgba(2, 17, 26, 0.55)), url('../supplement/pre-ready.png');
   background-position: center;
   background-size: cover;
 }

@@ -12,6 +12,8 @@
     <header class="no-print toolbar">
       <a class="back-link" href="/">← Back to map</a>
       <label>Map title <input id="layoutTitleInput" type="text" maxlength="140" value="Map"></label>
+      <label>Title size (pt)<input id="titleSizeInput" type="number" min="12" max="48" step="1" placeholder="Auto (layout default)" aria-describedby="titleSizeHelp"></label>
+      <small id="titleSizeHelp" class="field-help">Set 12–48 pt, or leave blank for the layout default.</small>
       <label>Prepared by <input id="authorInput" type="text" maxlength="100" placeholder="Name or organization"></label>
       <div class="button-group" role="group" aria-label="Layout Style">
         <button type="button" class="layout-style-button" id="layoutStyle1Button" aria-pressed="true">
@@ -83,6 +85,6 @@
     <script src="https://cdn.jsdelivr.net/npm/georaster@1.6.0/dist/georaster.browser.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
-    <script src="{% static 'js/print-layout.js' %}?v=20261012-no-inset-connector"></script>
+    <script src="{% static 'js/print-layout.js' %}?v=20261013-title-size-control"></script>
   </body>
 </html>

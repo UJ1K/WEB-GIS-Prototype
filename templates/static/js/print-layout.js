@@ -89,6 +89,7 @@
   // --- 3. UI Population ---
   function populateLayoutText() {
     const titleInput = $('layoutTitleInput');
+    const titleSizeInput = $('titleSizeInput');
     const authorInput = $('authorInput');
 
     titleInput.value = state.title || 'Map';
@@ -96,6 +97,22 @@
     
     titleInput.addEventListener('input', () => { 
       $('layoutTitle').textContent = titleInput.value.trim() || 'Untitled map'; 
+    });
+
+    titleSizeInput.addEventListener('input', () => {
+      const points = Number(titleSizeInput.value);
+      if (titleSizeInput.value !== '' && Number.isFinite(points) && points >= 12 && points <= 48) {
+        $('layoutTitle').style.fontSize = `${points}pt`;
+      } else if (titleSizeInput.value === '') {
+        $('layoutTitle').style.removeProperty('font-size');
+      }
+    });
+
+    titleSizeInput.addEventListener('change', () => {
+      if (titleSizeInput.value === '') return;
+      const points = Math.min(48, Math.max(12, Number(titleSizeInput.value)));
+      titleSizeInput.value = String(points);
+      $('layoutTitle').style.fontSize = `${points}pt`;
     });
     
     authorInput.addEventListener('input', () => { 
