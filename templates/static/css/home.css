@@ -244,8 +244,19 @@ h2 em {
 }
 
 .button-light {
-  background: var(--cyan);
-  color: #02111a;
+  background: var(--button-bg);
+  color: var(--button-fg);
+  transition: background-color 0.2s, color 0.2s, transform 0.2s;
+}
+
+.button-light:hover {
+  background: var(--button-hover);
+  transform: translateY(-2px);
+}
+
+.button-light:focus-visible {
+  outline: 2px solid var(--button-bg);
+  outline-offset: 4px;
 }
 
 .text-link {
@@ -781,6 +792,9 @@ h2 em {
   --surface-raised: #061c29;
   --accent: #52ff9a;
   --muted: #91a8b2;
+  --button-bg: #52ff9a;
+  --button-fg: #02111a;
+  --button-hover: #a0ffc4;
 }
 
 :root[data-theme="light"] {
@@ -795,9 +809,12 @@ h2 em {
   --surface: #f8fbfb;
   --surface-raised: #e3edef;
   --accent: #000000;
-  --cyan: #52ff9a;
-  --cyan-dim: rgba(8, 123, 80, 0.16);
+  --cyan: #000000;
+  --cyan-dim: rgba(0, 0, 0, 0.16);
   --muted: #52707c;
+  --button-bg: #000000;
+  --button-fg: #ffffff;
+  --button-hover: #252525;
 }
 
 :root[data-theme="dark"] {
