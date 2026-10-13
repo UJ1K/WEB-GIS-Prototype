@@ -167,8 +167,8 @@ a:focus-visible {
 }
 
 .hero-shade {
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0.34) 44%, rgba(253, 254, 255, 0.12) 100%), 
-              linear-gradient(0deg, rgba(2, 17, 26, 0.62), transparent 32%);
+  background: linear-gradient(90deg, var(--hero-shade-left) 0%, var(--hero-shade-mid) 44%, var(--hero-shade-right) 100%),
+              linear-gradient(0deg, var(--hero-shade-bottom), transparent 32%);
 }
 
 .hero-copy {
@@ -795,6 +795,10 @@ h2 em {
   --button-bg: #52ff9a;
   --button-fg: #02111a;
   --button-hover: #a0ffc4;
+  --hero-shade-left: rgba(0, 0, 0, 0.72);
+  --hero-shade-mid: rgba(0, 0, 0, 0.44);
+  --hero-shade-right: rgba(0, 0, 0, 0.12);
+  --hero-shade-bottom: rgba(2, 17, 26, 0.72);
 }
 
 :root[data-theme="light"] {
@@ -815,6 +819,40 @@ h2 em {
   --button-bg: #000000;
   --button-fg: #ffffff;
   --button-hover: #252525;
+  --hero-shade-left: rgba(255, 255, 255, 0.72);
+  --hero-shade-mid: rgba(255, 255, 255, 0.44);
+  --hero-shade-right: rgba(255, 255, 255, 0.16);
+  --hero-shade-bottom: rgba(255, 255, 255, 0.72);
+}
+
+:root[data-theme="light"] .hero {
+  color: #000000;
+}
+
+:root[data-theme="light"] .hero-intro,
+:root[data-theme="light"] .hero-note,
+:root[data-theme="light"] .hero-caption {
+  color: rgba(0, 0, 0, 0.78);
+}
+
+:root[data-theme="light"] .text-link {
+  color: #000000;
+}
+
+:root[data-theme="light"] .play-icon {
+  border-color: rgba(0, 0, 0, 0.6);
+}
+
+:root[data-theme="light"] .hero-caption span:first-child {
+  color: #000000;
+}
+
+:root[data-theme="light"] .hero-index {
+  color: #000000;
+}
+
+:root[data-theme="light"] .index-track {
+  background: linear-gradient(90deg, #000000 25%, rgba(0, 0, 0, 0.35) 25%);
 }
 
 :root[data-theme="dark"] {
