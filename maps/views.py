@@ -220,10 +220,10 @@ def _read_vector_features(upload):
 
 def _save_storage_file(name, category, upload):
     base_url = os.getenv("SUPABASE_URL", "").rstrip("/")
-    api_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
+    api_key = _storage_server_key()
     bucket = _geospatial_storage_bucket() if category == GeoDataset.RASTER else _file_storage_bucket()
     if not base_url or not api_key:
-        raise ValueError("Configure SUPABASE_URL and the server-only SUPABASE_SERVICE_ROLE_KEY to upload files securely.")
+        raise ValueError("Configure SUPABASE_URL and a server-only SUPABASE_SECRET_KEY (or legacy SUPABASE_SERVICE_ROLE_KEY) to upload files securely.")
     content_types = {
         ".tif": "image/tiff", ".tiff": "image/tiff",
         ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png",
@@ -263,13 +263,17 @@ def _legacy_storage_bucket():
     return os.getenv("SUPABASE_STORAGE_BUCKET", "geospatial-data")
 
 
+def _storage_server_key():
+    return os.getenv("SUPABASE_SECRET_KEY") or os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
+
+
 def _dataset_storage_bucket(dataset):
     return dataset.storage_bucket or _legacy_storage_bucket()
 
 
 def _signed_storage_url(path, bucket):
     base_url = os.getenv("SUPABASE_URL", "").rstrip("/")
-    api_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("SUPABASE_KEY", "")
+    api_key = _storage_server_key() or os.getenv("SUPABASE_KEY", "")
     if not base_url or not api_key:
         return ""
     endpoint = f"{base_url}/storage/v1/object/sign/{bucket}/{path}"
