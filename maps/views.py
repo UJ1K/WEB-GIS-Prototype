@@ -99,8 +99,15 @@ def datasets_api(request):
         return JsonResponse(_dataset_json(dataset), status=201)
 
     result = []
+    map_scope = request.GET.get("scope") == "map"
     try:
         for dataset in GeoDataset.objects.all():
+            if map_scope and dataset.data_type not in {GeoDataset.VECTOR, GeoDataset.RASTER}:
+                continue
+            if map_scope and dataset.data_type == GeoDataset.RASTER:
+                bucket = dataset.storage_bucket or _legacy_storage_bucket()
+                if bucket not in {_geospatial_storage_bucket(), _legacy_storage_bucket()}:
+                    continue
             item = _dataset_json(dataset)
             if dataset.data_type == GeoDataset.VECTOR:
                 item["geojson"] = json.loads(GeoJSONSerializer().serialize(
@@ -124,7 +131,7 @@ def dataset_raster_url(request, dataset_id):
         return JsonResponse({"error": "Raster dataset not found."}, status=404)
     except DatabaseError:
         return JsonResponse({"error": "Dataset database is unavailable."}, status=503)
-    signed_url = _signed_storage_url(dataset.storage_path)
+    signed_url = _signed_storage_url(dataset.storage_path, _dataset_storage_bucket(dataset))
     if not signed_url:
         return JsonResponse({"error": "Could not create a fresh Supabase Storage link. Check Storage read policies and server network access."}, status=502)
     return JsonResponse({"file_url": signed_url})
@@ -133,7 +140,7 @@ def dataset_raster_url(request, dataset_id):
 def _dataset_json(dataset):
     file_url = dataset.file_url
     if dataset.storage_path:
-        file_url = _signed_storage_url(dataset.storage_path)
+        file_url = _signed_storage_url(dataset.storage_path, _dataset_storage_bucket(dataset))
     return {"id": str(dataset.pk), "name": dataset.name, "data_type": dataset.data_type,
             "file_url": file_url, "created_at": dataset.created_at.isoformat()}
 
@@ -213,10 +220,10 @@ def _read_vector_features(upload):
 
 def _save_storage_file(name, category, upload):
     base_url = os.getenv("SUPABASE_URL", "").rstrip("/")
-    api_key = os.getenv("SUPABASE_KEY", "")
-    bucket = os.getenv("SUPABASE_STORAGE_BUCKET", "geospatial-data")
+    api_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
+    bucket = _geospatial_storage_bucket() if category == GeoDataset.RASTER else _file_storage_bucket()
     if not base_url or not api_key:
-        raise ValueError("Supabase Storage is not configured (SUPABASE_URL and SUPABASE_KEY).")
+        raise ValueError("Configure SUPABASE_URL and the server-only SUPABASE_SERVICE_ROLE_KEY to upload files securely.")
     content_types = {
         ".tif": "image/tiff", ".tiff": "image/tiff",
         ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png",
@@ -241,13 +248,28 @@ def _save_storage_file(name, category, upload):
         raise ValueError(f"Supabase Storage upload failed: {detail}") from exc
     except URLError as exc:
         raise ValueError("Could not reach Supabase Storage.") from exc
-    return GeoDataset.objects.create(name=name, data_type=category, storage_path=path)
+    return GeoDataset.objects.create(name=name, data_type=category, storage_path=path, storage_bucket=bucket)
 
 
-def _signed_storage_url(path):
+def _geospatial_storage_bucket():
+    return os.getenv("SUPABASE_GEODATA_BUCKET", "Geospatial")
+
+
+def _file_storage_bucket():
+    return os.getenv("SUPABASE_FILE_BUCKET", "File-Data")
+
+
+def _legacy_storage_bucket():
+    return os.getenv("SUPABASE_STORAGE_BUCKET", "geospatial-data")
+
+
+def _dataset_storage_bucket(dataset):
+    return dataset.storage_bucket or _legacy_storage_bucket()
+
+
+def _signed_storage_url(path, bucket):
     base_url = os.getenv("SUPABASE_URL", "").rstrip("/")
-    api_key = os.getenv("SUPABASE_KEY", "")
-    bucket = os.getenv("SUPABASE_STORAGE_BUCKET", "geospatial-data")
+    api_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("SUPABASE_KEY", "")
     if not base_url or not api_key:
         return ""
     endpoint = f"{base_url}/storage/v1/object/sign/{bucket}/{path}"

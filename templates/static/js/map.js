@@ -566,7 +566,7 @@
   // Stored datasets: vectors and renderable GeoTIFF rasters; media stays in the data manager.
   function loadDatasets() {
     const container = byId('datasetLayers');
-    fetch('/api/datasets/').then(response => { if (!response.ok) throw new Error('Could not load datasets'); return response.json(); }).then(({ datasets }) => {
+    fetch('/api/datasets/?scope=map').then(response => { if (!response.ok) throw new Error('Could not load datasets'); return response.json(); }).then(({ datasets }) => {
       container.replaceChildren(); if (!datasets.length) { container.textContent = 'No uploaded datasets'; refreshLayerOrderControls(); return; }
       datasets.forEach(dataset => {
         if (dataset.data_type === 'vektor') {

@@ -15,6 +15,7 @@ class GeoDataset(models.Model):
     data_type = models.CharField(max_length=10, choices=DATA_TYPES)
     file_url = models.URLField(blank=True)
     storage_path = models.CharField(max_length=512, blank=True)
+    storage_bucket = models.CharField(max_length=100, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
