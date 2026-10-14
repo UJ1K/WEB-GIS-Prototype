@@ -563,7 +563,7 @@
     setMapLabelsVisible(labelsEnabled);
   });
 
-  // Stored datasets: GeoJSON vectors and signed-URL GeoTIFFs.
+  // Stored datasets: vectors and renderable GeoTIFF rasters; media stays in the data manager.
   function loadDatasets() {
     const container = byId('datasetLayers');
     fetch('/api/datasets/').then(response => { if (!response.ok) throw new Error('Could not load datasets'); return response.json(); }).then(({ datasets }) => {
@@ -582,7 +582,7 @@
           registerOrderedLayer(`dataset-${dataset.id}`, [layerId, lineId, pointId]);
           enforceLayerHierarchy();
           check.onchange = () => [layerId, lineId, pointId].forEach(id => setVisibility(id, check.checked));
-        } else createStoredRasterRow(container, dataset);
+        } else if (dataset.data_type === 'raster') createStoredRasterRow(container, dataset);
       });
       orderLayerGroups.set('local-input', rasterRecord ? [rasterRecord.layerId] : []);
       orderLayerGroups.set('calculated-index', indexRecord ? [indexRecord.layerId] : []);

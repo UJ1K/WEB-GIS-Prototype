@@ -6,7 +6,9 @@ from django.contrib.gis.db import models
 class GeoDataset(models.Model):
     VECTOR = "vektor"
     RASTER = "raster"
-    DATA_TYPES = ((VECTOR, "Vektor"), (RASTER, "Raster"))
+    IMAGE = "image"
+    VIDEO = "video"
+    DATA_TYPES = ((VECTOR, "Vektor"), (RASTER, "Raster"), (IMAGE, "Image"), (VIDEO, "Video"))
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=160)

@@ -13,13 +13,13 @@
 <main>
   <p><a href="/">← Return to map</a></p>
   <h1>Geospatial Data Manager</h1>
-  <p>Upload GeoJSON or zipped shapefiles as vector layers, or store GeoTIFF rasters in Supabase Storage.</p>
+  <p>Upload vectors, GeoTIFF rasters, JPG/PNG images, and MP4 videos. Media files are stored in Supabase Storage.</p>
   <section class="card">
     <form id="uploadForm" enctype="multipart/form-data">
       {% csrf_token %}
       <label>Dataset name<input name="name" maxlength="160" required placeholder="e.g. Flood extent, September"></label>
-      <label>Category<select name="category" required><option value="vektor">Vector</option><option value="raster">Satellite raster</option></select></label>
-      <label>Dataset file<input name="file" type="file" accept=".zip,.geojson,.json,.tif,.tiff" required></label>
+      <label>Category<select name="category" required><option value="vektor">Vector</option><option value="raster">Satellite raster</option><option value="image">Image (JPG, PNG)</option><option value="video">Video (MP4)</option></select></label>
+      <label>Dataset file<input name="file" type="file" accept=".zip,.geojson,.json,.tif,.tiff,.jpg,.jpeg,.png,.mp4" required></label>
       <div style="display:flex;align-items:end"><button type="submit">Upload dataset</button></div>
       <div id="status" role="status"></div>
     </form>
@@ -28,9 +28,11 @@
 </main>
 <script>
 const form=document.getElementById('uploadForm'),status=document.getElementById('status'),rows=document.getElementById('datasetRows');
+const category=form.elements.category,fileInput=form.elements.file,acceptedFiles={vektor:'.zip,.geojson,.json',raster:'.tif,.tiff',image:'.jpg,.jpeg,.png',video:'.mp4'};
+function updateAcceptedFiles(){fileInput.accept=acceptedFiles[category.value]||'';fileInput.value=''}category.addEventListener('change',updateAcceptedFiles);updateAcceptedFiles();
 async function readResponse(r){const body=await r.text();try{return body?JSON.parse(body):{}}catch{const preview=body.replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim().slice(0,180);if(r.redirected)return {error:'Your session may have expired. Sign in again at /admin/login/.'};return {error:`Server returned a non-JSON response (HTTP ${r.status}). ${preview}`}}}
-async function refresh(){try{const r=await fetch('/api/datasets/',{headers:{Accept:'application/json'}});const result=await readResponse(r);if(!r.ok)throw new Error(result.error||`Could not load datasets (HTTP ${r.status}).`);const datasets=result.datasets||[];rows.replaceChildren();if(!datasets.length){rows.innerHTML='<tr><td colspan="4">No uploaded datasets yet.</td></tr>';return}for(const d of datasets){const tr=document.createElement('tr');const count=d.data_type==='vektor'?`${(d.geojson||[]).length} features`:'';tr.innerHTML='<td></td><td></td><td></td><td></td>';tr.cells[0].textContent=d.name;tr.cells[1].textContent=d.data_type;tr.cells[2].textContent=count;if(d.file_url){const a=document.createElement('a');a.href=d.file_url;a.textContent='Open TIFF';a.target='_blank';a.rel='noopener';tr.cells[2].append(a)}tr.cells[3].textContent=new Date(d.created_at).toLocaleString();rows.append(tr)}}catch(e){rows.innerHTML='';const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=4;td.textContent=e.message;tr.append(td);rows.append(tr)}}
-form.addEventListener('submit',async e=>{e.preventDefault();status.textContent='Uploading…';const button=form.querySelector('button');button.disabled=true;try{const r=await fetch('/api/datasets/',{method:'POST',headers:{Accept:'application/json'},body:new FormData(form)});const result=await readResponse(r);if(!r.ok)throw new Error(result.error||`Upload failed (HTTP ${r.status}).`);status.textContent='Dataset uploaded.';form.reset();await refresh()}catch(e){status.textContent=e.message}finally{button.disabled=false}});refresh();
+async function refresh(){try{const r=await fetch('/api/datasets/',{headers:{Accept:'application/json'}});const result=await readResponse(r);if(!r.ok)throw new Error(result.error||`Could not load datasets (HTTP ${r.status}).`);const datasets=result.datasets||[];rows.replaceChildren();if(!datasets.length){rows.innerHTML='<tr><td colspan="4">No uploaded datasets yet.</td></tr>';return}for(const d of datasets){const tr=document.createElement('tr');const count=d.data_type==='vektor'?`${(d.geojson||[]).length} features`:'';tr.innerHTML='<td></td><td></td><td></td><td></td>';tr.cells[0].textContent=d.name;tr.cells[1].textContent=d.data_type;tr.cells[2].textContent=count;if(d.file_url){const a=document.createElement('a');a.href=d.file_url;a.textContent=d.data_type==='video'?'Open MP4':d.data_type==='image'?'Open image':d.data_type==='raster'?'Open TIFF':'Download vector';a.target='_blank';a.rel='noopener';tr.cells[2].append(a)}tr.cells[3].textContent=new Date(d.created_at).toLocaleString();rows.append(tr)}}catch(e){rows.innerHTML='';const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=4;td.textContent=e.message;tr.append(td);rows.append(tr)}}
+form.addEventListener('submit',async e=>{e.preventDefault();status.textContent='Uploading…';const button=form.querySelector('button');button.disabled=true;try{const r=await fetch('/api/datasets/',{method:'POST',headers:{Accept:'application/json'},body:new FormData(form)});const result=await readResponse(r);if(!r.ok)throw new Error(result.error||`Upload failed (HTTP ${r.status}).`);status.textContent='Dataset uploaded.';form.reset();updateAcceptedFiles();await refresh()}catch(e){status.textContent=e.message}finally{button.disabled=false}});refresh();
 </script>
 </body>
 </html>

@@ -81,10 +81,17 @@ def datasets_api(request):
         if upload.size > 500 * 1024 * 1024:
             return JsonResponse({"error": "Dataset files must be 500 MB or smaller."}, status=413)
         suffix = Path(upload.name).suffix.lower()
-        if category == GeoDataset.VECTOR and suffix not in {".zip", ".geojson", ".json"}:
-            return JsonResponse({"error": "Vector datasets must be .zip or .geojson files."}, status=400)
-        if category == GeoDataset.RASTER and suffix not in {".tif", ".tiff"}:
-            return JsonResponse({"error": "Raster datasets must be .tif or .tiff files."}, status=400)
+        supported_suffixes = {
+            GeoDataset.VECTOR: {".zip", ".geojson", ".json"},
+            GeoDataset.RASTER: {".tif", ".tiff"},
+            GeoDataset.IMAGE: {".jpg", ".jpeg", ".png"},
+            GeoDataset.VIDEO: {".mp4"},
+        }
+        if category not in supported_suffixes:
+            return JsonResponse({"error": "Choose a valid dataset category."}, status=400)
+        if suffix not in supported_suffixes[category]:
+            allowed = ", ".join(sorted(supported_suffixes[category]))
+            return JsonResponse({"error": f"{category.title()} datasets must use: {allowed}."}, status=400)
         try:
             dataset = _save_dataset(name, category, upload)
         except (ValueError, OSError, RuntimeError) as exc:
@@ -117,7 +124,7 @@ def dataset_raster_url(request, dataset_id):
         return JsonResponse({"error": "Raster dataset not found."}, status=404)
     except DatabaseError:
         return JsonResponse({"error": "Dataset database is unavailable."}, status=503)
-    signed_url = _signed_raster_url(dataset.storage_path)
+    signed_url = _signed_storage_url(dataset.storage_path)
     if not signed_url:
         return JsonResponse({"error": "Could not create a fresh Supabase Storage link. Check Storage read policies and server network access."}, status=502)
     return JsonResponse({"file_url": signed_url})
@@ -125,17 +132,17 @@ def dataset_raster_url(request, dataset_id):
 
 def _dataset_json(dataset):
     file_url = dataset.file_url
-    if dataset.data_type == GeoDataset.RASTER and dataset.storage_path:
-        file_url = _signed_raster_url(dataset.storage_path)
+    if dataset.storage_path:
+        file_url = _signed_storage_url(dataset.storage_path)
     return {"id": str(dataset.pk), "name": dataset.name, "data_type": dataset.data_type,
             "file_url": file_url, "created_at": dataset.created_at.isoformat()}
 
 
 def _save_dataset(name, category, upload):
-    if category not in {GeoDataset.VECTOR, GeoDataset.RASTER}:
+    if category not in {GeoDataset.VECTOR, GeoDataset.RASTER, GeoDataset.IMAGE, GeoDataset.VIDEO}:
         raise ValueError("Choose a valid dataset category.")
-    if category == GeoDataset.RASTER:
-        return _save_raster(name, upload)
+    if category != GeoDataset.VECTOR:
+        return _save_storage_file(name, category, upload)
     features = _read_vector_features(upload)
     if not features:
         raise ValueError("No features were found in this file.")
@@ -204,17 +211,26 @@ def _read_vector_features(upload):
         shutil.rmtree(temp_root, ignore_errors=True)
 
 
-def _save_raster(name, upload):
+def _save_storage_file(name, category, upload):
     base_url = os.getenv("SUPABASE_URL", "").rstrip("/")
     api_key = os.getenv("SUPABASE_KEY", "")
     bucket = os.getenv("SUPABASE_STORAGE_BUCKET", "geospatial-data")
     if not base_url or not api_key:
         raise ValueError("Supabase Storage is not configured (SUPABASE_URL and SUPABASE_KEY).")
+    content_types = {
+        ".tif": "image/tiff", ".tiff": "image/tiff",
+        ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png",
+        ".mp4": "video/mp4",
+    }
+    suffix = Path(upload.name).suffix.lower()
+    content_type = content_types.get(suffix)
+    if not content_type:
+        raise ValueError("Unsupported stored file type.")
     path = f"{uuid.uuid4()}{Path(upload.name).suffix.lower()}"
     endpoint = f"{base_url}/storage/v1/object/{bucket}/{path}"
     request = Request(endpoint, data=upload.read(), method="POST", headers={
         "apikey": api_key, "Authorization": f"Bearer {api_key}",
-        "Content-Type": "image/tiff", "x-upsert": "false",
+        "Content-Type": content_type, "x-upsert": "false",
     })
     try:
         with urlopen(request, timeout=60) as response:
@@ -225,10 +241,10 @@ def _save_raster(name, upload):
         raise ValueError(f"Supabase Storage upload failed: {detail}") from exc
     except URLError as exc:
         raise ValueError("Could not reach Supabase Storage.") from exc
-    return GeoDataset.objects.create(name=name, data_type=GeoDataset.RASTER, storage_path=path)
+    return GeoDataset.objects.create(name=name, data_type=category, storage_path=path)
 
 
-def _signed_raster_url(path):
+def _signed_storage_url(path):
     base_url = os.getenv("SUPABASE_URL", "").rstrip("/")
     api_key = os.getenv("SUPABASE_KEY", "")
     bucket = os.getenv("SUPABASE_STORAGE_BUCKET", "geospatial-data")
