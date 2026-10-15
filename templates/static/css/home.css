@@ -57,6 +57,14 @@ a {
   top: 0;
   z-index: 1000;
   border-bottom: 1px solid var(--line);
+  transition: background-color 0.25s ease, border-color 0.25s ease, backdrop-filter 0.25s ease;
+}
+
+.site-header.is-scrolled {
+  background-color: color-mix(in srgb, var(--surface) 50%, transparent);
+  border-bottom-color: color-mix(in srgb, var(--line) 50%, transparent);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
 }
 
 .brand {

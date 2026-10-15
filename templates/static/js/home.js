@@ -30,6 +30,13 @@
     }
   });
 
+  const header = document.querySelector('.site-header');
+  const syncHeaderTransparency = () => {
+    header?.classList.toggle('is-scrolled', window.scrollY > 8);
+  };
+  syncHeaderTransparency();
+  window.addEventListener('scroll', syncHeaderTransparency, { passive: true });
+
   const cards = document.querySelectorAll('.theme-card');
   if (!cards.length || !('IntersectionObserver' in window)) return;
 
