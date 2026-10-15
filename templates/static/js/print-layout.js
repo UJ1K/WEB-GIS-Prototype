@@ -420,21 +420,35 @@
     canvas.style.visibility = 'hidden';
 
     // html2canvas does not reliably copy WebGL canvases. Capture the inset separately.
-    if (!insetMap.loaded() || !insetMap.areTilesLoaded()) {
-      await new Promise(resolve => {
-        let settled = false;
-        const finish = () => {
-          if (settled) return;
-          settled = true;
-          clearTimeout(timeout);
-          insetMap.off('idle', finish);
-          resolve();
-        };
-        const timeout = setTimeout(finish, 5000);
-        insetMap.once('idle', finish);
-        if (insetMap.loaded() && insetMap.areTilesLoaded()) finish();
-      });
-    }
+    await new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        insetMap.off('idle', finish);
+        reject(new Error('The inset map did not finish loading. Please try exporting again.'));
+      }, 15000);
+      const finish = () => {
+        clearTimeout(timeout);
+        insetMap.off('idle', finish);
+        resolve();
+      };
+      insetMap.once('idle', finish);
+      insetMap.triggerRepaint();
+    });
+
+    await new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        insetMap.off('render', finish);
+        reject(new Error('The inset map could not be rendered for export. Please try again.'));
+      }, 5000);
+      const finish = () => {
+        clearTimeout(timeout);
+        insetMap.off('render', finish);
+        resolve();
+      };
+      insetMap.once('render', finish);
+      insetMap.triggerRepaint();
+    });
+    await new Promise(resolve => requestAnimationFrame(resolve));
+
     insetMap.triggerRepaint();
     const insetCanvas = insetMap.getCanvas();
     let insetSnapshot = $('insetSnapshot');
@@ -631,10 +645,10 @@
   });
 
   insetMap.once('load', () => {
-    resolveInsetReady();
     addRasterBasemap(insetMap, 'print-inset');
     updateInsetExtent();
     insetMap.triggerRepaint();
+    resolveInsetReady();
   });
 
   setOrientation('portrait');
