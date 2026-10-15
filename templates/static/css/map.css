@@ -7,9 +7,7 @@
   --cyan-dim: rgba(157, 228, 240, 0.2);
   --text-main: #c4d4d9;
   --text-muted: #6b8594;
-}
 
-:root {
   /* Z-index scale */
   --z-base: 100;
   --z-caption: 500;
@@ -18,13 +16,6 @@
   --z-mobile-menu: 850;
   --z-floating-panel: 900;
   --z-modal: 1000;
-}
-
-.top-left-widget {
-  z-index: var(--z-widgets);
-}
-#floating_layer_control {
-  z-index: var(--z-floating-panel);
 }
 
 * {
@@ -63,7 +54,8 @@ button {
 
 .maplibregl-popup.custom-dark-popup .maplibregl-popup-content {
   padding: 0;
-  background: #051821;
+  background: rgba(5, 24, 33, 0.75); /* 75% Transparency */
+  backdrop-filter: blur(6px);
   color: #c4d4d9;
   border: 1px solid #1c323f;
   border-radius: 8px;
@@ -74,13 +66,14 @@ button {
 }
 
 .maplibregl-popup.custom-dark-popup .maplibregl-popup-tip {
-  border-top-color: #051821;
-  border-bottom-color: #051821
+  border-top-color: rgba(5, 24, 33, 0.75);
+  border-bottom-color: rgba(5, 24, 33, 0.75)
 }
 
 .maplibregl-ctrl-attrib {
-  background: rgba(2, 17, 26, .8) !important;
-  color: #c4d4d9 !important
+  background: rgba(2, 17, 26, 0.75) !important; /* 75% Transparency */
+  color: #c4d4d9 !important;
+  border-radius: 4px;
 }
 
 .maplibregl-ctrl-attrib a {
@@ -123,7 +116,8 @@ button {
 /* Structured CCTV Info Popup */
 #cctv_info_popup,
 .cctv-info-popup {
-  background: #051821;
+  background: rgba(5, 24, 33, 0.75); /* 75% Transparency */
+  backdrop-filter: blur(6px);
   border: 1px solid #1c323f;
   border-radius: 8px;
   width: 350px;
@@ -188,14 +182,12 @@ button {
 }
 
 @keyframes cctv-pulse {
-
   0%,
   100% {
     opacity: 1;
     transform: scale(1);
     box-shadow: 0 0 8px #52ff9a;
   }
-
   50% {
     opacity: 0.35;
     transform: scale(0.85);
@@ -209,7 +201,7 @@ button {
   flex: 0 0 24px;
   border: 1px solid #31515b;
   border-radius: 4px;
-  background: #0b222c;
+  background: rgba(11, 34, 44, 0.75);
   color: #b5c9cf;
   font-size: 16px;
   line-height: 1;
@@ -258,7 +250,7 @@ button {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
-  background: #0a202a;
+  background: rgba(10, 32, 42, 0.75); /* 75% Transparency */
   border: 1px solid #1a3944;
   border-radius: 6px;
   padding: 9px 10px;
@@ -322,7 +314,7 @@ button {
   justify-content: space-between;
   gap: 14px;
   padding: 14px 16px 12px;
-  background: linear-gradient(125deg, #0b2b37, #071c26);
+  background: linear-gradient(125deg, rgba(11, 43, 55, 0.85), rgba(7, 28, 38, 0.85));
   border-bottom: 1px solid #1c3a45
 }
 
@@ -353,7 +345,7 @@ button {
   flex: 0 0 27px;
   border: 1px solid #31515b;
   border-radius: 6px;
-  background: #0b222c;
+  background: rgba(11, 34, 44, 0.75);
   color: #b5c9cf;
   font-size: 19px;
   line-height: 1
@@ -374,7 +366,7 @@ button {
 .survey-index-card {
   position: relative;
   padding: 10px 11px;
-  background: #0a202a;
+  background: rgba(10, 32, 42, 0.75); /* 75% Transparency */
   border: 1px solid #1a3944;
   border-radius: 6px
 }
@@ -392,7 +384,7 @@ button {
   padding: 4px 7px;
   border: 1px solid #31515b;
   border-radius: 4px;
-  background: #0d2a35;
+  background: rgba(13, 42, 53, 0.75);
   color: #a9c3ca;
   font-size: 10px
 }
@@ -431,7 +423,7 @@ button {
   overflow: hidden;
   border: 1px solid #1a3944;
   border-radius: 6px;
-  background: #081a22
+  background: rgba(8, 26, 34, 0.75)
 }
 
 .survey-media-title {
@@ -474,43 +466,38 @@ button {
   .survey-popup {
     width: min(300px, calc(100vw - 52px))
   }
-
   .survey-popup-body {
     padding: 10px
   }
-
   .survey-popup-header {
     padding: 12px
   }
 }
 
+/* 75% Opacity applied to Top-Left Widget */
 .top-left-widget {
   position: absolute;
-  z-index: 800;
+  z-index: var(--z-widgets);
   top: 18px;
   left: 18px;
-  background: rgba(5, 18, 25, 0.88);
+  background: rgba(5, 18, 25, 0.75); /* 75% Opacity */
+  backdrop-filter: blur(6px);
   border: 1px solid var(--line);
-  
-  /* UPDATED: Neon green text with a glowing shadow */
   color: var(--cyan);
   text-shadow: 0 0 8px rgba(82, 255, 154, 0.4);
-  
   padding: 6px 9px;
   display: flex;
   align-items: center;
   gap: 8px;
   font-size: 12px;
   font-weight: 500;
+  border-radius: 8px;
 }
 
 .top-left-widget select {
   width: 178px;
-  
-  /* UPDATED: Matches the neon green text and glow */
   color: var(--cyan);
   text-shadow: 0 0 8px rgba(82, 255, 154, 0.4);
-  
   background: transparent;
   border: 0;
   outline: 0;
@@ -526,21 +513,23 @@ button {
   color: var(--text-muted);
 }
 
-
-/* UPDATED: Matches the dark theme instead of a light theme */
 .top-left-widget option {
   color: var(--text-main, #ffffff); 
-  background: #051219; /* Solid hex version of your rgba(5, 18, 25) */
+  background: #051219;
 }
 
+/* 75% Opacity applied to Top-Right Widget */
 .top-right-widget {
   position: absolute;
-  z-index: 800;
+  z-index: var(--z-widgets);
   top: 58px;
   right: 15px;
   display: flex;
-  background: rgba(5, 18, 25, 0.85);
+  background: rgba(5, 18, 25, 0.75); /* 75% Opacity */
+  backdrop-filter: blur(6px);
   border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 .top-right-widget button {
@@ -571,34 +560,39 @@ button {
   box-shadow: none !important;
 }
 
+/* 75% Opacity applied to Basemap Switch */
 .basemap-switch {
   position: absolute;
   z-index: 1200;
   top: 15px;
   right: 15px;
   display: flex;
-  background: rgba(5, 18, 25, .92);
-  border: 1px solid var(--line)
+  background: rgba(5, 18, 25, 0.75); /* 75% Opacity */
+  backdrop-filter: blur(6px);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
 }
-/* Matched exactly to the .top-left-widget style */
+
+/* 75% Opacity applied to Export Container */
 .export-button-container {
   position: absolute;
   z-index: 780;
   top: 18px;
   left: 280px;
   display: flex;
-  background: rgba(5, 18, 25, 0.88); /* Matched opacity */
+  background: rgba(5, 18, 25, 0.75); /* 75% Opacity */
+  backdrop-filter: blur(6px);
   border: 1px solid var(--line);
-  padding: 6px 9px; /* Matched padding */
+  padding: 6px 9px;
   color: var(--cyan);
   text-shadow: 0 0 8px rgba(82, 255, 154, 0.4);
   align-items: center;
   font-size: 12px;
   font-weight: 500;
-  /* border-radius: 4px; REMOVED to match sharp corners */
+  border-radius: 8px;
 }
 
-/* Removes the grey background/border from the actual button element */
 .export-button-container button {
   background: transparent;
   border: none;
@@ -635,20 +629,24 @@ button {
   color: var(--cyan)
 }
 
+/* 75% Opacity applied to Drawing Toolbar */
 .drawing-toolbar {
   position: absolute;
   z-index: 820;
   top: 60px;
   left: 15px;
   display: flex;
-  background: rgba(5, 18, 25, .92);
-  border: 1px solid var(--line)
+  background: rgba(5, 18, 25, 0.75); /* 75% Opacity */
+  backdrop-filter: blur(6px);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 .drawing-toolbar button {
   min-width: 38px;
   border-bottom: 1px solid var(--line);
-  font-size: 16px
+  font-size: 16px;
 }
 
 .drawing-toolbar button:last-child {
@@ -659,16 +657,20 @@ button {
   background: var(--panel-hover)
 }
 
+/* 75% Opacity applied to Side Tools */
 .side-tools {
   position: absolute;
-  z-index: 700;
+  z-index: var(--z-side-tools);
   left: 15px;
   top: 108px;
   display: flex;
   flex-direction: column;
-  background: rgba(5, 18, 25, 0.85);
+  background: rgba(5, 18, 25, 0.75); /* 75% Opacity */
+  backdrop-filter: blur(6px);
   border: 1px solid var(--line);
   width: 32px;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 .side-tools button {
@@ -699,7 +701,7 @@ button {
 /* Map Caption */
 .map-caption {
   position: absolute;
-  z-index: 500;
+  z-index: var(--z-caption);
   bottom: 150px;
   left: 15px;
   color: #fff;
@@ -707,7 +709,7 @@ button {
   font-size: 11px;
 }
 
-/* Bottom Dashboard - Edge to Edge Flat */
+/* Bottom Dashboard - Edge to Edge Flat with 75% Transparency */
 .dash {
   position: absolute;
   z-index: 800;
@@ -715,13 +717,13 @@ button {
   left: 0;
   right: 0;
   height: 250px;
-  background: var(--panel);
+  background: rgba(2, 17, 26, 0.75); /* 75% Transparency */
+  backdrop-filter: blur(8px);
   display: grid;
   grid-template-columns: 1fr 1.4fr 1.2fr 1fr;
   border-top: 1px solid var(--line);
   transition: transform 0.3s ease-in-out;
 }
-
 
 .dash-section {
   padding: 15px 20px;
@@ -782,6 +784,7 @@ button {
   letter-spacing: 0.05em;
   transition: 0.2s;
   padding: 4px;
+  border-radius: 4px;
 }
 
 .main-modes button.active {
@@ -803,6 +806,7 @@ button {
   border: 1px solid var(--line);
   color: var(--text-main);
   font-size: 10px;
+  border-radius: 4px;
 }
 
 .sub-modes button:hover {
@@ -919,7 +923,8 @@ button {
   padding: 3px;
   background: #061922;
   border: 1px solid var(--line);
-  color: var(--text-main)
+  color: var(--text-main);
+  border-radius: 4px;
 }
 
 .index-controls {
@@ -941,7 +946,8 @@ button {
   padding: 4px;
   background: #061922;
   border: 1px solid var(--line);
-  color: var(--text-main)
+  color: var(--text-main);
+  border-radius: 4px;
 }
 
 #calculateIndex {
@@ -1023,23 +1029,21 @@ button {
   white-space: normal
 }
 
+/* 75% Opacity applied to Floating Layer Control Panel */
 #floating_layer_control {
   position: absolute;
-  z-index: 900;
+  z-index: var(--z-floating-panel);
   top: 102px;
   right: 15px;
-  
-  /* INCREASED: Changed 280px to 360px */
   width: min(360px, calc(100vw - 30px)); 
-  
-  /* INCREASED: Changed 55vh to 75vh, and 420px to 600px */
   max-height: min(75vh, 600px); 
-  
   overflow: auto;
-  background: rgba(2, 17, 26, .96);
+  background: rgba(2, 17, 26, 0.75); /* 75% Opacity */
+  backdrop-filter: blur(8px);
   border: 1px solid var(--line);
   color: var(--text-main);
   box-shadow: 0 8px 28px rgba(0, 0, 0, .35);
+  border-radius: 8px;
 }
 
 /* Chrome/Edge/Safari Scrollbar */
@@ -1057,12 +1061,12 @@ button {
 .layer-panel-header {
   position: sticky;
   top: 0;
-  z-index: 10; /* Add this to ensure it stays above scrolling content */
+  z-index: 10;
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 9px 11px;
-  background: #061922;
+  background: rgba(6, 25, 34, 0.85);
   border-bottom: 1px solid var(--line);
   color: var(--cyan);
   font-weight: 700;
@@ -1112,17 +1116,15 @@ button {
 .layer-row-controls,
 .database-raster-controls {
   display: grid !important;
-  /* 50px for "Opacity", 1fr to stretch the slider, auto for the button (if it exists) */
   grid-template-columns: 50px 1fr auto !important; 
   align-items: center;
   gap: 12px;
   margin-top: 8px !important;
-  /* Indent the controls to perfectly align under the layer title */
   padding-left: 27px !important; 
 }
 
 .layer-row:hover {
-  background: rgba(9, 49, 75, 0.3); /* A washed out version of var(--panel-hover) */
+  background: rgba(9, 49, 75, 0.3);
 }
 
 .layer-row:last-child {
@@ -1136,18 +1138,6 @@ button {
   display: flex;
   gap: 10px;
   min-width: 0;
-}
-
-.layer-row-controls,
-.database-raster-controls {
-  display: grid;
-  /* Fixed width for label, flexible slider, auto-width for button */
-  grid-template-columns: 55px 1fr 65px; 
-  align-items: center;
-  gap: 10px;
-  margin-top: 8px;
-  /* Indent controls to perfectly align under the layer title, skipping the checkbox */
-  padding-left: 27px; 
 }
 
 .layer-row-controls input[type=range],
@@ -1164,22 +1154,6 @@ button {
   white-space: nowrap;
   font-size: 11px;
   margin-bottom: 6px
-}
-
-.layer-row-controls {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  align-items: center;
-  gap: 8px;
-  font-size: 10px;
-  color: var(--text-muted)
-}
-
-.layer-row-controls input[type=range] {
-  width: 100%;
-  margin: 6px 0 2px 0; /* Gives the slider a bit more breathing room */
-  accent-color: var(--cyan);
-  cursor: pointer;
 }
 
 .layer-row-controls input[type=checkbox] {
@@ -1337,6 +1311,7 @@ input[type=range]::-webkit-slider-thumb {
   padding: 4px;
   text-align: left;
   font-size: 10px;
+  border-radius: 4px;
 }
 
 .v-card:hover {
@@ -1353,6 +1328,7 @@ input[type=range]::-webkit-slider-thumb {
   width: 35px;
   height: 24px;
   background: #333;
+  border-radius: 2px;
 }
 
 .v-card:nth-child(1) .v-thumb {
@@ -1402,6 +1378,7 @@ input[type=range]::-webkit-slider-thumb {
   width: 100%;
   background: #333;
   position: relative;
+  border-radius: 2px 2px 0 0;
 }
 
 .bar-group span {
@@ -1480,13 +1457,16 @@ input[type=range]::-webkit-slider-thumb {
     display: grid;
     position: absolute;
     z-index: var(--z-mobile-menu);
-    width: 44px; /* Increased from 34px */
-    height: 44px; /* Increased from 34px */
+    width: 44px;
+    height: 44px; 
     right: 5px;
     top: 5px;
-    background: rgba(5, 18, 25, .9);
+    background: rgba(5, 18, 25, 0.75); /* 75% Opacity */
+    backdrop-filter: blur(6px);
     border: 1px solid var(--line);
-    place-items: center
+    place-items: center;
+    border-radius: 8px;
+    overflow: hidden;
   }
 
   .top-right-widget.mobile-open {
@@ -1512,7 +1492,7 @@ input[type=range]::-webkit-slider-thumb {
     top: 54px;
     left: 9px;
     max-width: calc(100% - 18px);
-    min-width: 44px; /* Increased to ensure easy tapping */
+    min-width: 44px; 
     min-height: 44px;
     flex-wrap: wrap
   }
@@ -1550,8 +1530,10 @@ input[type=range]::-webkit-slider-thumb {
     align-items: center;
     padding: 11px 13px;
     border: 1px solid var(--line);
-    background: rgba(2, 17, 26, .94);
-    color: var(--text-main)
+    background: rgba(2, 17, 26, 0.75); /* 75% Opacity */
+    backdrop-filter: blur(6px);
+    color: var(--text-main);
+    border-radius: 8px;
   }
 
   .dash.mobile-open {
@@ -1563,7 +1545,9 @@ input[type=range]::-webkit-slider-thumb {
     height: auto;
     max-height: 78vh;
     overflow: auto;
-    grid-template-columns: 1fr 1fr
+    grid-template-columns: 1fr 1fr;
+    border-radius: 8px;
+    border-top: 1px solid var(--line);
   }
 
   .dash.mobile-open .dash-section {
@@ -1592,6 +1576,7 @@ input[type=range]::-webkit-slider-thumb {
     display: none
   }
 }
+
 /* Global custom focus ring */
 button:focus-visible,
 select:focus-visible,
@@ -1600,9 +1585,9 @@ input:focus-visible,
   outline: 2px solid var(--cyan);
   outline-offset: 2px;
   box-shadow: 0 0 8px var(--cyan-dim);
+  border-radius: inherit;
 }
 
-/* Remove default focus overrides if they conflict */
 .top-left-widget select:focus {
-  outline: none; /* Hide default for mouse users */
-}
+  outline: none;
+} 
