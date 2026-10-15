@@ -37,6 +37,36 @@
   syncHeaderTransparency();
   window.addEventListener('scroll', syncHeaderTransparency, { passive: true });
 
+  const navLinks = [...document.querySelectorAll('.main-nav a[href^="#"]')];
+  const navSections = navLinks
+    .map((link) => document.querySelector(link.getAttribute('href')))
+    .filter(Boolean);
+  const activateNavLink = (sectionId) => {
+    navLinks.forEach((link) => {
+      const isActive = link.hash === `#${sectionId}`;
+      link.classList.toggle('active', isActive);
+      if (isActive) link.setAttribute('aria-current', 'location');
+      else link.removeAttribute('aria-current');
+    });
+  };
+
+  navLinks.forEach((link) => {
+    link.addEventListener('click', () => activateNavLink(link.hash.slice(1)));
+  });
+
+  if ('IntersectionObserver' in window && navSections.length) {
+    const sectionVisibility = new Map();
+    const sectionObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => sectionVisibility.set(entry.target.id, entry.intersectionRatio));
+      const mostVisible = [...sectionVisibility.entries()]
+        .filter(([, ratio]) => ratio > 0)
+        .sort((a, b) => b[1] - a[1])[0];
+      if (mostVisible) activateNavLink(mostVisible[0]);
+    }, { rootMargin: '-20% 0px -45% 0px', threshold: [0, 0.1, 0.25, 0.5, 0.75] });
+
+    navSections.forEach((section) => sectionObserver.observe(section));
+  }
+
   const cards = document.querySelectorAll('.theme-card');
   if (!cards.length || !('IntersectionObserver' in window)) return;
 
