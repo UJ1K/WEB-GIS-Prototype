@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import uuid
 import tempfile
 import zipfile
@@ -10,10 +11,10 @@ from urllib.request import Request, urlopen
 from django.contrib.gis.geos import GEOSGeometry, Polygon
 from django.contrib.gis.serializers.geojson import Serializer as GeoJSONSerializer
 from django.db import DatabaseError, connection
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, JsonResponse, StreamingHttpResponse
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
-from django.views.decorators.http import require_GET, require_POST
+from django.views.decorators.http import require_GET, require_POST, require_safe
 
 from django.conf import settings
 from django.db import DatabaseError, transaction
@@ -28,6 +29,68 @@ def home(request):
 def map_view(request):
     supabase_url = os.getenv("SUPABASE_URL", "").rstrip("/")
     return render(request, "maps/map.html", {"supabase_url": supabase_url})
+
+
+def _file_range(path, start, end):
+    with path.open("rb") as source:
+        source.seek(start)
+        remaining = end - start + 1
+        while remaining:
+            chunk = source.read(min(64 * 1024, remaining))
+            if not chunk:
+                break
+            remaining -= len(chunk)
+            yield chunk
+
+
+@require_safe
+def indonesia_admin_pmtiles(request):
+    """Serve the map archive with byte-range support required by PMTiles."""
+    path = settings.BASE_DIR / "templates" / "static" / "data" / "indonesia-admin.pmtiles"
+    if not path.is_file():
+        return HttpResponse(status=404)
+
+    size = path.stat().st_size
+    start, end = 0, size - 1
+    status = 200
+    range_header = request.headers.get("Range")
+    if range_header:
+        match = re.fullmatch(r"bytes=(\d*)-(\d*)", range_header.strip(), re.IGNORECASE)
+        if not match or (not match.group(1) and not match.group(2)):
+            response = HttpResponse(status=416)
+            response["Content-Range"] = f"bytes */{size}"
+            response["Accept-Ranges"] = "bytes"
+            return response
+
+        first, last = match.groups()
+        if first:
+            start = int(first)
+            end = min(int(last), size - 1) if last else size - 1
+        else:
+            suffix_length = int(last)
+            if suffix_length <= 0:
+                response = HttpResponse(status=416)
+                response["Content-Range"] = f"bytes */{size}"
+                response["Accept-Ranges"] = "bytes"
+                return response
+            start = max(0, size - suffix_length)
+        if start >= size or end < start:
+            response = HttpResponse(status=416)
+            response["Content-Range"] = f"bytes */{size}"
+            response["Accept-Ranges"] = "bytes"
+            return response
+        status = 206
+
+    response = StreamingHttpResponse(
+        _file_range(path, start, end),
+        status=status,
+        content_type="application/vnd.pmtiles",
+    )
+    response["Accept-Ranges"] = "bytes"
+    response["Content-Length"] = str(end - start + 1)
+    if status == 206:
+        response["Content-Range"] = f"bytes {start}-{end}/{size}"
+    return response
 
 
 def print_layout(request):
