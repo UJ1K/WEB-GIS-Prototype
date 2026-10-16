@@ -42,3 +42,15 @@ The spatial endpoint is `/api/features/`; use `?bbox=west,south,east,north` to f
 ## Dataset manager
 
 Open `/data-manager/` after signing in as a Django staff user to upload GeoJSON or a ZIP shapefile as a vector dataset, or a GeoTIFF to the configured Supabase Storage bucket. Set `SUPABASE_URL`, `SUPABASE_KEY`, and optionally `SUPABASE_STORAGE_BUCKET` in `.env`. Create a private bucket and configure Storage policies to permit uploads and reads for this app. Vector uploads are converted to WGS84 and stored as `MapFeature` rows linked to dataset metadata; `/api/datasets/` returns those features as GeoJSON. Raster links are signed for one hour when requested. A publishable key can only perform actions allowed by your Storage policies; it is not the database password or a service-role secret.
+
+## Indonesia administrative boundaries (PMTiles)
+
+The map can display province and regency/city boundaries from a PMTiles vector archive without a tile server. The source is the Ministry of Home Affairs dataset published on [data.go.id](https://data.go.id/dataset/dataset/peta-batas-administrasi-provinsi-dan-kabupaten-kota). Download its GeoJSON resource and review the resource terms before redistribution. GADM is an alternative source, but its current terms restrict redistribution and commercial use without prior permission.
+
+Build the archive with Tippecanoe so its vector source-layer is `indonesiaadmin` (the frontend expects this exact name):
+
+```powershell
+tippecanoe -zg -l indonesiaadmin -o templates/static/data/indonesia-admin.pmtiles --drop-densest-as-needed --extend-zooms-if-still-dropping indonesia-admin.geojson
+```
+
+The map registers the PMTiles protocol and adds an **Indonesia boundaries** visibility and ordering control. Keep the generated archive at `templates/static/data/indonesia-admin.pmtiles`; the layer reports as unavailable until it is present. Deployments must serve this static file with HTTP byte-range requests enabled for PMTiles access.

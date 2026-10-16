@@ -1,5 +1,7 @@
 // MapLibre GL JS map, drawing tools, and browser-side GeoTIFF preview.
 (() => {
+  const pmtilesProtocol = window.pmtiles?.Protocol ? new pmtiles.Protocol() : null;
+  if (pmtilesProtocol) maplibregl.addProtocol('pmtiles', pmtilesProtocol.tile);
   const regions = { semarang: [110.43491, -6.95711], bangkok: [100.5018, 13.7563], jakarta: [106.8456, -6.2088], chiangmai: [98.9853, 18.7883], kalimantan: [116, -.5], yogyakarta: [110.36, -7.782] };
   let activeRegion = 'semarang';
   let currentBasemap = 'dark';
@@ -520,6 +522,76 @@
     }
   }
 
+  async function addAdminBoundaryLayer() {
+    const config = window.WEBGIS_ADMIN_BOUNDARIES;
+    if (!config?.url || !config.sourceLayer) return;
+
+    const row = document.createElement('div');
+    row.className = 'layer-order-row';
+    row.dataset.layerKey = 'indonesia-admin-boundaries';
+    const main = document.createElement('div');
+    main.className = 'layer-order-main';
+    const checkLabel = document.createElement('label');
+    checkLabel.className = 'layer-order-visible';
+    checkLabel.title = 'Toggle administrative boundaries';
+    const check = document.createElement('input');
+    check.type = 'checkbox';
+    check.checked = true;
+    check.disabled = true;
+    check.setAttribute('aria-label', 'Show Indonesia administrative boundaries');
+    checkLabel.append(check);
+    const title = document.createElement('span');
+    title.className = 'layer-row-title';
+    title.textContent = 'Indonesia boundaries (loading)';
+    const options = document.createElement('button');
+    options.type = 'button';
+    options.className = 'layer-order-options';
+    options.setAttribute('aria-label', 'Ordering options for Indonesia boundaries');
+    options.setAttribute('aria-expanded', 'false');
+    options.textContent = '⋮';
+    const actions = document.createElement('div');
+    actions.className = 'layer-order-actions';
+    actions.setAttribute('aria-label', 'Layer ordering controls');
+    main.append(checkLabel, title, options, actions);
+    row.append(main);
+    byId('datasetLayers').prepend(row);
+
+    try {
+      if (!pmtilesProtocol) throw new Error('The PMTiles library did not load.');
+      const archiveUrl = new URL(config.url, window.location.href).href;
+      const archive = new pmtiles.PMTiles(archiveUrl);
+      pmtilesProtocol.add(archive);
+      await archive.getHeader();
+
+      const sourceId = 'indonesia-admin-boundaries';
+      map.addSource(sourceId, {
+        type: 'vector',
+        url: `pmtiles://${archiveUrl}`,
+        attribution: 'Administrative boundaries: Kementerian Dalam Negeri via data.go.id'
+      });
+      map.addLayer({
+        id: `${sourceId}-fill`, type: 'fill', source: sourceId,
+        'source-layer': config.sourceLayer,
+        paint: { 'fill-color': '#52d6cf', 'fill-opacity': 0.035 }
+      });
+      map.addLayer({
+        id: `${sourceId}-border`, type: 'line', source: sourceId,
+        'source-layer': config.sourceLayer,
+        paint: { 'line-color': '#77e5dc', 'line-width': 1, 'line-opacity': 0.72 }
+      });
+
+      title.textContent = 'Indonesia boundaries';
+      check.disabled = false;
+      check.onchange = () => [`${sourceId}-fill`, `${sourceId}-border`].forEach(id => setVisibility(id, check.checked));
+      registerOrderedLayer(row.dataset.layerKey, [`${sourceId}-fill`, `${sourceId}-border`]);
+      syncMapLayerOrder();
+    } catch (error) {
+      title.textContent = 'Indonesia boundaries (archive unavailable)';
+      row.title = 'Add templates/static/data/indonesia-admin.pmtiles to enable this layer.';
+      console.warn('Could not load the Indonesia administrative-boundary PMTiles archive.', error);
+    }
+  }
+
   function addApplicationLayers() {
     if (map.getSource('drawn-data')) return;
     mapLayersInitialized = true;
@@ -567,7 +639,7 @@
   function loadDatasets() {
     const container = byId('datasetLayers');
     fetch('/api/datasets/?scope=map').then(response => { if (!response.ok) throw new Error('Could not load datasets'); return response.json(); }).then(({ datasets }) => {
-      container.replaceChildren(); if (!datasets.length) { container.textContent = 'No uploaded datasets'; refreshLayerOrderControls(); return; }
+      container.replaceChildren(); if (!datasets.length) { const empty = document.createElement('div'); empty.textContent = 'No uploaded datasets'; container.append(empty); addAdminBoundaryLayer(); refreshLayerOrderControls(); return; }
       datasets.forEach(dataset => {
         if (dataset.data_type === 'vektor') {
           const label = document.createElement('div'); label.className = 'layer-order-row'; label.dataset.layerKey = `dataset-${dataset.id}`; const main = document.createElement('div'); main.className = 'layer-order-main'; const checkLabel = document.createElement('label'); checkLabel.className = 'layer-order-visible'; checkLabel.title = 'Toggle vector layer'; const check = document.createElement('input'); check.type = 'checkbox'; check.setAttribute('aria-label', `Show ${dataset.name}`); checkLabel.append(check); const title = document.createElement('span'); title.className = 'layer-row-title'; title.textContent = `${dataset.name} (vector)`; const options = document.createElement('button'); options.type = 'button'; options.className = 'layer-order-options'; options.setAttribute('aria-label', `Ordering options for ${dataset.name}`); options.setAttribute('aria-expanded', 'false'); options.textContent = '⋮'; const actions = document.createElement('div'); actions.className = 'layer-order-actions'; actions.setAttribute('aria-label', 'Layer ordering controls'); main.append(checkLabel, title, options, actions); label.append(main); container.append(label);
@@ -588,7 +660,8 @@
       orderLayerGroups.set('calculated-index', indexRecord ? [indexRecord.layerId] : []);
       refreshLayerOrderControls();
       syncMapLayerOrder();
-    }).catch(error => { container.textContent = error.message || 'Could not load datasets'; });
+      addAdminBoundaryLayer();
+    }).catch(error => { container.textContent = error.message || 'Could not load datasets'; addAdminBoundaryLayer(); });
   }
   function createStoredRasterRow(container, dataset) {
     const row = document.createElement('div'); row.className = 'database-raster-row layer-order-row'; row.dataset.layerKey = `dataset-${dataset.id}`; const main = document.createElement('div'); main.className = 'layer-order-main'; const visibleLabel = document.createElement('label'); visibleLabel.className = 'layer-order-visible'; visibleLabel.title = 'Toggle raster layer'; const visible = document.createElement('input'); visible.type = 'checkbox'; visible.disabled = true; visible.setAttribute('aria-label', `Show ${dataset.name}`); visibleLabel.append(visible); const title = document.createElement('span'); title.className = 'layer-row-title'; title.textContent = `${dataset.name} (raster)`; title.title = dataset.name; const options = document.createElement('button'); options.type = 'button'; options.className = 'layer-order-options'; options.setAttribute('aria-label', `Ordering options for ${dataset.name}`); options.setAttribute('aria-expanded', 'false'); options.textContent = '⋮'; const actions = document.createElement('div'); actions.className = 'layer-order-actions'; actions.setAttribute('aria-label', 'Layer ordering controls'); main.append(visibleLabel, title, options, actions); const controls = document.createElement('div'); controls.className = 'layer-row-controls database-raster-controls'; const opacityLabel = document.createElement('label'); opacityLabel.append(document.createTextNode('Opacity ')); const opacity = document.createElement('input'); opacity.type = 'range'; opacity.min = '0'; opacity.max = '100'; opacity.value = '80'; opacity.disabled = true; opacityLabel.append(opacity); const button = document.createElement('button'); button.type = 'button'; button.className = 'dataset-render-button'; button.textContent = 'Render'; const status = document.createElement('span'); status.className = 'dataset-render-status'; status.setAttribute('role', 'status'); controls.append(opacityLabel, button); row.append(main, controls, status); container.append(row); let record = null;
