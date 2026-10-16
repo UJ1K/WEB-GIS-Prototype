@@ -538,15 +538,15 @@
     check.type = 'checkbox';
     check.checked = true;
     check.disabled = true;
-    check.setAttribute('aria-label', 'Show Indonesia administrative boundaries');
+    check.setAttribute('aria-label', 'Show Indonesia province boundaries');
     checkLabel.append(check);
     const title = document.createElement('span');
     title.className = 'layer-row-title';
-    title.textContent = 'Indonesia boundaries (loading)';
+    title.textContent = 'Indonesia provinces (loading)';
     const options = document.createElement('button');
     options.type = 'button';
     options.className = 'layer-order-options';
-    options.setAttribute('aria-label', 'Ordering options for Indonesia boundaries');
+    options.setAttribute('aria-label', 'Ordering options for Indonesia provinces');
     options.setAttribute('aria-expanded', 'false');
     options.textContent = '⋮';
     const actions = document.createElement('div');
@@ -567,7 +567,7 @@
       map.addSource(sourceId, {
         type: 'vector',
         url: `pmtiles://${archiveUrl}`,
-        attribution: 'Administrative boundaries: Kementerian Dalam Negeri via data.go.id'
+        attribution: 'Indonesia province boundaries'
       });
       map.addLayer({
         id: `${sourceId}-fill`, type: 'fill', source: sourceId,
@@ -580,15 +580,15 @@
         paint: { 'line-color': '#77e5dc', 'line-width': 1, 'line-opacity': 0.72 }
       });
 
-      title.textContent = 'Indonesia boundaries';
+      title.textContent = 'Indonesia provinces';
       check.disabled = false;
       check.onchange = () => [`${sourceId}-fill`, `${sourceId}-border`].forEach(id => setVisibility(id, check.checked));
       registerOrderedLayer(row.dataset.layerKey, [`${sourceId}-fill`, `${sourceId}-border`]);
       syncMapLayerOrder();
     } catch (error) {
-      title.textContent = 'Indonesia boundaries (archive unavailable)';
+      title.textContent = 'Indonesia provinces (archive unavailable)';
       row.title = 'Add templates/static/data/indonesia-admin.pmtiles to enable this layer.';
-      console.warn('Could not load the Indonesia administrative-boundary PMTiles archive.', error);
+      console.warn('Could not load the Indonesia province-boundary PMTiles archive.', error);
     }
   }
 

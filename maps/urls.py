@@ -7,6 +7,7 @@ app_name = "maps"
 urlpatterns = [
     path("", views.home, name="home"),
     path("map/", views.map_view, name="map"),
+    path("static/data/indonesia-admin.pmtiles", views.indonesia_admin_pmtiles, name="indonesia-admin-pmtiles"),
     path("print-layout/", views.print_layout, name="print-layout"),
     path("tiles/carto-voyager/<str:variant>/<int:z>/<int:x>/<int:y>.png", views.carto_voyager_tile, name="carto-voyager-tile"),
     path("data-manager/", views.data_manager, name="data-manager"),
