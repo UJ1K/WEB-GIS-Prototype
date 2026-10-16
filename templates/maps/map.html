@@ -207,7 +207,7 @@
   <script>
     window.SUPABASE_URL = "{{ supabase_url|default:''|escapejs }}";
     window.WEBGIS_ADMIN_BOUNDARIES = {
-      url: "{% static 'data/indonesia-admin.pmtiles' %}",
+      url: "{% url 'maps:indonesia-admin-pmtiles' %}",
       sourceLayer: "indonesiaadmin"
     };
   </script>
