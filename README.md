@@ -45,12 +45,12 @@ Open `/data-manager/` after signing in as a Django staff user to upload GeoJSON 
 
 ## Indonesia administrative boundaries (PMTiles)
 
-The map can display province and regency/city boundaries from a PMTiles vector archive without a tile server. The source is the Ministry of Home Affairs dataset published on [data.go.id](https://data.go.id/dataset/dataset/peta-batas-administrasi-provinsi-dan-kabupaten-kota). Download its GeoJSON resource and review the resource terms before redistribution. GADM is an alternative source, but its current terms restrict redistribution and commercial use without prior permission.
+The map displays province boundaries from `templates/static/data/indonesia-admin.pmtiles` without a tile server. The current archive metadata identifies 34 province polygons in the `indonesiaadmin` vector layer; it does not contain regency/city boundaries. The archive was generated from `provinsi.geojson`. Check that file's source and terms before redistributing the archive. The Ministry of Home Affairs dataset is listed on [data.go.id](https://data.go.id/dataset/dataset/peta-batas-administrasi-provinsi-dan-kabupaten-kota). GADM is another possible source, but its current terms restrict redistribution and commercial use without prior permission.
 
 Build the archive with Tippecanoe so its vector source-layer is `indonesiaadmin` (the frontend expects this exact name):
 
 ```powershell
-tippecanoe -zg -l indonesiaadmin -o templates/static/data/indonesia-admin.pmtiles --drop-densest-as-needed --extend-zooms-if-still-dropping indonesia-admin.geojson
+tippecanoe -zg -l indonesiaadmin -o templates/static/data/indonesia-admin.pmtiles --drop-densest-as-needed --extend-zooms-if-still-dropping provinsi.geojson
 ```
 
-The map registers the PMTiles protocol and adds an **Indonesia boundaries** visibility and ordering control. Keep the generated archive at `templates/static/data/indonesia-admin.pmtiles`; the layer reports as unavailable until it is present. Deployments must serve this static file with HTTP byte-range requests enabled for PMTiles access.
+The map registers the PMTiles protocol and adds an **Indonesia provinces** visibility and ordering control. The generated archive is included at `templates/static/data/indonesia-admin.pmtiles`. Deployments must serve this static file with HTTP byte-range requests enabled for PMTiles access.
